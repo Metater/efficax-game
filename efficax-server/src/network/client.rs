@@ -2,11 +2,9 @@ use std::{net::SocketAddr};
 
 use tokio::net::tcp::OwnedWriteHalf;
 
-use crate::network::packet::NetworkPacket;
-
 pub struct NetworkClient {
-    addr: SocketAddr,
-    writer: OwnedWriteHalf
+    pub addr: SocketAddr,
+    pub writer: OwnedWriteHalf
 }
 
 impl NetworkClient {

@@ -2,11 +2,8 @@ mod server;
 mod network;
 mod state;
 
-//use tokio::time::{sleep, Duration};
-use tokio::io;
-
 #[tokio::main]
-async fn main() -> io::Result<()> {
+async fn main() {
     println!("Hello, world!");
 
     /*
@@ -15,8 +12,8 @@ async fn main() -> io::Result<()> {
     */
 
     let (listen_task, message_channel) = network::start().await;
-    let _server_task = server::start(message_channel).await;
+    server::start(message_channel).await;
     
-    listen_task.abort();
-    Ok(())
+    println!("server shutting down");
+    //listen_task.abort();
 }

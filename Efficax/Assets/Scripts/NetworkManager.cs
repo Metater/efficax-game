@@ -15,8 +15,24 @@ public class NetworkManager : TcpClient
     protected override void OnConnected()
     {
         Debug.Log($"TCP client connected a new session with Id {Id}");
-        bool send = SendAsync(new byte[] { 0, 0, 1, 1, 2, 2, 3, 3 });
-        Debug.Log("Sent data: " + send);
+
+        /*
+        for (int i = 0; i < 100; i++)
+        {
+            SendAsync(new byte[] { 0, 255 });
+        }
+        */
+        //SendAsync(new byte[] { 3 });
+
+        //bool s = SendAsync(new byte[] { 1, 48, 69, 20, 64, 61, 64 });
+        //Debug.Log("Sent data: " + s);
+
+        byte[] b = Encoding.UTF8.GetBytes("HelHello, worldHello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!lo, world!");
+        byte[] buf = new byte[b.Length + 1];
+        buf[0] = 1;
+        b.CopyTo(buf, 1);
+        bool se = SendAsync(buf);
+        Debug.Log("Sent data: " + se);
     }
 
     protected override void OnDisconnected()

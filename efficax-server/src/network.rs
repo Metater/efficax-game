@@ -6,7 +6,7 @@ pub mod client;
 use tokio::{net::{TcpListener, tcp::OwnedReadHalf}, task::JoinHandle};
 use tokio::sync::mpsc::{self, UnboundedSender, UnboundedReceiver};
 
-use std::{io, net::SocketAddr};
+use std::{io::{self, Cursor}, net::SocketAddr};
 
 use crate::network::{message::NetworkMessage, client::NetworkClient};
 use crate::network::packet::NetworkPacket;
@@ -24,6 +24,7 @@ pub async fn start() -> (JoinHandle<()>, UnboundedReceiver<NetworkMessage>) {
 }
 
 async fn listen(listener: TcpListener, tx: UnboundedSender<NetworkMessage>) {
+    println!("started listening");
     loop {
         // TODO May need accept on listener.accept for cancel to work correctly
         let (stream, addr) = match listener.accept().await {
@@ -40,13 +41,13 @@ async fn listen(listener: TcpListener, tx: UnboundedSender<NetworkMessage>) {
             break;
         }
 
-        println!("accepted client: {}", addr);
+        //println!("accepted client: {}", addr);
 
         tokio::spawn(async move {
             if let Err(e) = process(&channel, reader, addr).await {
-                println!("error: {}", e);
+                println!("client {} error: {}", addr, e);
             }
-            channel.send(NetworkMessage::Leave(addr)).ok()
+            channel.send(NetworkMessage::Leave(addr)).ok();
         });
     }
 }
@@ -61,15 +62,19 @@ async fn process(
         reader.readable().await?;
         match reader.try_read_buf(&mut buf) {
             Ok(0) => break,
-            Ok(_n) => {
-                let packet = NetworkPacket::new(addr, buf.clone());
-                let message = NetworkMessage::Data(packet);
-                if let Err(_) = channel.send(message) {
-                    break;
+            Ok(n) => {
+                println!("client {} sent {} bytes", addr, n);
+                let mut reader = Cursor::new(&buf);
+                    // if reader.position is 4096, carry over data?
+                while reader.position() < n as u64 {
+                    let packet = NetworkPacket::parse(addr, &mut reader).await?;
+                    let message = NetworkMessage::Data(packet);
+                    if let Err(_) = channel.send(message) {
+                        break;
+                    }
                 }
-                println!("received data {:#?} from: {}", buf, addr);
+                //println!("client {} sent data {:#?}", addr, buf);
             }
-            // TODO Learn why ref is needed
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                 continue;
             }
