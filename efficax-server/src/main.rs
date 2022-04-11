@@ -1,10 +1,9 @@
 mod server;
 mod network;
+mod state;
 
-use tokio::time::{sleep, Duration};
-use tokio::task::{self, JoinHandle};
-
-use std::{io, net::SocketAddr};
+//use tokio::time::{sleep, Duration};
+use tokio::io;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -15,9 +14,8 @@ async fn main() -> io::Result<()> {
     println!("sent data to: {}", &addr);
     */
 
-    // TODO Use poll receive for reading channel
     let (listen_task, message_channel) = network::start().await;
-
+    let _server_task = server::start(message_channel).await;
     
     listen_task.abort();
     Ok(())

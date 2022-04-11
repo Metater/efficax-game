@@ -3,5 +3,5 @@ pub enum NetworkData {
 }
 
 impl NetworkData {
-
+    
 }
