@@ -1,22 +1,24 @@
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 use std::thread::{sleep};
-use std::collections::HashMap;
+use std::collections::{HashSet};
 
+use cgmath::Point2;
 use tokio::sync::mpsc::error::TryRecvError;
-use tokio::sync::mpsc::{UnboundedReceiver};
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::task::{self};
 
-use crate::network::client::NetworkClient;
 use crate::network::data::NetworkData;
-use crate::network::message::NetworkMessage;
+use crate::network::data::chat::ChatData;
+use crate::network::data::entity_update::EntityUpdateData;
+use crate::network::message::{NetworkListenerMessage, NetworkSenderMessage};
 use crate::network::packet::NetworkPacket;
 use crate::state::{EfficaxState};
 
-pub async fn run(mut rx: UnboundedReceiver<NetworkMessage>) {
+pub async fn run(mut rx: UnboundedReceiver<NetworkListenerMessage>, tx: UnboundedSender<NetworkSenderMessage>) {
     task::spawn_blocking(move || {
         let start_time = Instant::now();
-        let mut server = EfficaxServer::new();
+        let mut server = EfficaxServer::new(tx);
         'main_loop: loop {
             server.start_tick();
             'recv_loop: loop {
@@ -29,7 +31,7 @@ pub async fn run(mut rx: UnboundedReceiver<NetworkMessage>) {
                         break 'recv_loop
                     }
                     Err(TryRecvError::Disconnected) => {
-                        println!("message sending channel disconnected");
+                        println!("[server]: listener channel disconnected");
                         break 'main_loop
                     }
                 }
@@ -37,7 +39,7 @@ pub async fn run(mut rx: UnboundedReceiver<NetworkMessage>) {
             server.tick();
             server.end_tick();
         }
-        println!("server stopped after {:?} and on tick: {}", start_time.elapsed(), server.state.tick_id);
+        println!("[server]: stopped after: {:?} and on tick: {}", start_time.elapsed(), server.state.tick_id);
         server.stop();
     }).await.unwrap()
 }
@@ -47,18 +49,20 @@ struct EfficaxServer {
     carryover_time: Duration,
     tick_period: Duration,
 
-    clients: HashMap<SocketAddr, NetworkClient>,
+    sender: UnboundedSender<NetworkSenderMessage>,
+    clients: HashSet<SocketAddr>,
     state: EfficaxState
 }
 
 impl EfficaxServer {
-    pub fn new() -> Self {
+    pub fn new(sender: UnboundedSender<NetworkSenderMessage>) -> Self {
         EfficaxServer {
             tick_start: Instant::now(),
             carryover_time: Duration::default(),
             tick_period: Duration::from_millis(40),
 
-            clients: HashMap::new(),
+            sender,
+            clients: HashSet::new(),
             state: EfficaxState::new()
         }
     }
@@ -82,17 +86,27 @@ impl EfficaxServer {
         self.state.tick();
     }
 
-    pub fn handle_message(&mut self, message: NetworkMessage) {
+    pub fn handle_message(&mut self, message: NetworkListenerMessage) {
         match message {
-            NetworkMessage::Join(client) => self.handle_join(client),
-            NetworkMessage::Data(packet) => self.handle_data(packet),
-            NetworkMessage::Leave(addr) => self.handle_leave(addr),
+            NetworkListenerMessage::Join(addr) => self.handle_join(addr),
+            NetworkListenerMessage::Data(packet) => self.handle_data(packet),
+            NetworkListenerMessage::Leave(addr) => self.handle_leave(addr),
         }
     }
     
-    fn handle_join(&mut self, client: NetworkClient) {
-        println!("client {} joined server", client.addr);
-        self.clients.insert(client.addr, client);
+    fn handle_join(&mut self, addr: SocketAddr) {
+        println!("[server]: client: {} joined server", addr);
+        println!("{:?}", std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis());
+        self.clients.insert(addr);
+        self.sender.send(NetworkSenderMessage::Data(
+            NetworkPacket::new(addr, NetworkData::EntityUpdate(EntityUpdateData {
+                id: 0,
+                pos: Point2::new(0.0, 0.0)
+            }))
+        )).ok();
     }
 
     fn handle_data(&mut self, packet: NetworkPacket) {
@@ -103,12 +117,15 @@ impl EfficaxServer {
             NetworkData::Chat(ref _data) => {
                 //println!("client {} sent chat data: {}", packet.from, data.message);
             }
+            _ => {
+                // TODO disconnect client
+            }
         }
-        println!("client {} sent packet: {:?}", packet.from, packet.data);
+        println!("[server]: client: {} sent packet: {:?}", packet.addr, packet.data);
     }
 
     fn handle_leave(&mut self, addr: SocketAddr) {
-        println!("client {} left server", addr);
+        println!("[server]: client: {} left server", addr);
         self.clients.remove(&addr);
     }
 }

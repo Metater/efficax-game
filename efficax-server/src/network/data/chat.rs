@@ -10,7 +10,7 @@ pub struct ChatData {
 impl ChatData {
     pub const ID: u8 = 1;
 
-    pub async fn parse(reader: &mut Cursor<&Vec<u8>>) -> io::Result<Self> {
+    pub async fn read(reader: &mut Cursor<&Vec<u8>>) -> io::Result<Self> {
         let mut message = String::new();
         reader.read_to_string(&mut message).await?;
         Ok(ChatData {

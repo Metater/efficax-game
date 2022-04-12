@@ -9,3 +9,4 @@ edition = "2021"
 rand = "0.8.3"
 tokio = { version = "1", features = ["full"] }
 ctrlc = "3.2.1"
+cgmath = "0.18.0"
