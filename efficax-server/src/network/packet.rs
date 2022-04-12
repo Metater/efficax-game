@@ -1,7 +1,7 @@
 use std::io::{self, Cursor};
 use std::{net::SocketAddr};
 
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncReadExt};
 use tokio::net::tcp::OwnedWriteHalf;
 
 use super::data::NetworkData;
@@ -18,7 +18,7 @@ pub struct NetworkPacket {
 impl NetworkPacket {
     pub fn new(addr: SocketAddr, data: NetworkData) -> NetworkPacket {
         NetworkPacket {
-            addr: addr,
+            addr,
             data
         }
     }

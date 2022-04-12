@@ -9,7 +9,6 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::task::{self};
 
 use crate::network::data::NetworkData;
-use crate::network::data::chat::ChatData;
 use crate::network::data::entity_update::EntityUpdateData;
 use crate::network::message::{NetworkListenerMessage, NetworkSenderMessage};
 use crate::network::packet::NetworkPacket;
@@ -96,10 +95,6 @@ impl EfficaxServer {
     
     fn handle_join(&mut self, addr: SocketAddr) {
         println!("[server]: client: {} joined server", addr);
-        println!("{:?}", std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_millis());
         self.clients.insert(addr);
         self.sender.send(NetworkSenderMessage::Data(
             NetworkPacket::new(addr, NetworkData::EntityUpdate(EntityUpdateData {

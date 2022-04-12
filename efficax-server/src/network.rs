@@ -10,8 +10,6 @@ use std::{io::{self, Cursor}, net::SocketAddr, collections::HashMap};
 use crate::network::message::{NetworkListenerMessage, NetworkSenderMessage};
 use crate::network::packet::NetworkPacket;
 
-use self::data::NetworkData;
-
 pub async fn open() -> (EfficaxNetwork, UnboundedReceiver<NetworkListenerMessage>, UnboundedSender<NetworkSenderMessage>) {
     let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
 
@@ -60,11 +58,6 @@ impl EfficaxNetwork {
                 Ok(stream) => stream,
                 Err(_) => continue
             };
-
-            println!("{:?}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis());
     
             let (reader, writer) = stream.into_split();
     

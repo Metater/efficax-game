@@ -29,7 +29,7 @@ public class NetworkManager : TcpClient
 
         byte[] b = Encoding.UTF8.GetBytes("Hello, world!");
         byte[] buf = new byte[b.Length + 1];
-        buf[0] = 4;
+        buf[0] = 1;
         b.CopyTo(buf, 1);
         bool se = SendAsync(buf);
         Debug.Log("Sent data: " + se);
