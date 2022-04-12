@@ -1,3 +1,5 @@
+use tokio::time::{sleep, Duration};
+
 mod server;
 mod network;
 mod state;
@@ -11,9 +13,14 @@ async fn main() {
     println!("sent data to: {}", &addr);
     */
 
-    let (listen_task, message_channel) = network::start().await;
-    server::start(message_channel).await;
-    
-    println!("server shutting down");
-    //listen_task.abort();
+    let (listener, rx) = network::listen().await;
+
+    ctrlc::set_handler(move || {
+        listener.stop();
+        println!("server shutting down");
+    }).expect("Error setting Ctrl-C handler");
+
+    server::run(rx).await;
+
+    sleep(Duration::from_secs(4)).await;
 }
