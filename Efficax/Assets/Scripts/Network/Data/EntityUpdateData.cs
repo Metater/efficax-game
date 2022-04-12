@@ -3,10 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
-namespace Assets.Scripts.Network.Data
+public class EntityUpdateData : IReadData<EntityUpdateData>
 {
-    class EntityUpdateData
+    public uint id;
+    public Vector2 pos;
+
+    public EntityUpdateData Read(NetDataReader reader)
     {
+        id = reader.GetUInt();
+        pos = DataUtils.ReadPos(reader);
+        return this;
     }
 }

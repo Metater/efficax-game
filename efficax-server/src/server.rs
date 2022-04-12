@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 use std::thread::{sleep};
-use std::collections::{HashSet};
+use std::collections::{HashSet, HashMap};
 
 use cgmath::Point2;
 use tokio::sync::mpsc::error::TryRecvError;
@@ -12,6 +12,7 @@ use crate::network::data::NetworkData;
 use crate::network::data::entity_update::EntityUpdateData;
 use crate::network::message::{NetworkListenerMessage, NetworkSenderMessage};
 use crate::network::packet::NetworkPacket;
+use crate::state::player_state::PlayerState;
 use crate::state::{EfficaxState};
 
 pub async fn run(mut rx: UnboundedReceiver<NetworkListenerMessage>, tx: UnboundedSender<NetworkSenderMessage>) {
@@ -49,8 +50,10 @@ struct EfficaxServer {
     tick_period: Duration,
 
     sender: UnboundedSender<NetworkSenderMessage>,
-    clients: HashSet<SocketAddr>,
-    state: EfficaxState
+    //clients: HashSet<SocketAddr>,
+    state: EfficaxState,
+
+    players: HashMap<SocketAddr, PlayerState>,
 }
 
 impl EfficaxServer {
@@ -61,8 +64,10 @@ impl EfficaxServer {
             tick_period: Duration::from_millis(40),
 
             sender,
-            clients: HashSet::new(),
-            state: EfficaxState::new()
+            //clients: HashSet::new(),
+            state: EfficaxState::new(),
+
+            players: HashMap::new(),
         }
     }
 
@@ -83,6 +88,16 @@ impl EfficaxServer {
 
     pub fn tick(&mut self) {
         self.state.tick();
+
+        for player in &self.players {
+            let pos = player.1.pos;
+            self.sender.send(NetworkSenderMessage::Data(
+                NetworkPacket::new(*player.0, NetworkData::EntityUpdate(EntityUpdateData {
+                    id: player.1.id,
+                    pos,
+                }))
+            )).ok();   
+        }
     }
 
     pub fn handle_message(&mut self, message: NetworkListenerMessage) {
@@ -95,18 +110,15 @@ impl EfficaxServer {
     
     fn handle_join(&mut self, addr: SocketAddr) {
         println!("[server]: client: {} joined server", addr);
-        self.clients.insert(addr);
-        self.sender.send(NetworkSenderMessage::Data(
-            NetworkPacket::new(addr, NetworkData::EntityUpdate(EntityUpdateData {
-                id: 0,
-                pos: Point2::new(0.0, 0.0)
-            }))
-        )).ok();
+        self.players.insert(addr, PlayerState::new(self.state.get_next_entity_id(), Point2::new(0.0, 0.0)));
     }
 
     fn handle_data(&mut self, packet: NetworkPacket) {
         match packet.data {
-            NetworkData::Input(ref _data) => {
+            NetworkData::Input(ref data) => {
+                if let Some(player) = self.players.get(&packet.addr) {
+                    player.feed_input(data);
+                }
                 //println!("client {} sent input data: {}", packet.from, data.input);
             }
             NetworkData::Chat(ref _data) => {
@@ -121,6 +133,6 @@ impl EfficaxServer {
 
     fn handle_leave(&mut self, addr: SocketAddr) {
         println!("[server]: client: {} left server", addr);
-        self.clients.remove(&addr);
+        self.players.remove(&addr);
     }
 }

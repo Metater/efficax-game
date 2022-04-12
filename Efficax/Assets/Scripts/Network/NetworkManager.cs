@@ -10,7 +10,12 @@ using TcpClient = NetCoreServer.TcpClient;
 
 public class NetworkManager : TcpClient
 {
-    public NetworkManager(string address, int port) : base(address, port) { }
+    private PacketManager packetManager;
+
+    public NetworkManager(PacketManager packetManager, string address, int port) : base(address, port)
+    {
+        this.packetManager = packetManager;
+    }
 
     protected override void OnConnected()
     {
@@ -51,7 +56,8 @@ public class NetworkManager : TcpClient
 
     protected override void OnReceived(byte[] buffer, long offset, long size)
     {
-        Debug.Log(Encoding.UTF8.GetString(buffer, (int)offset, (int)size));
+        //Debug.Log(Encoding.UTF8.GetString(buffer, (int)offset, (int)size));
+        packetManager.Handle(new NetDataReader(buffer, (int)offset, (int)size));
     }
 
     protected override void OnError(SocketError error)
