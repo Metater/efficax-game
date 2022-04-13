@@ -10,22 +10,21 @@ public class EntityManager : MonoBehaviour
     public GameManager gameManager;
 
     [SerializeField] private Transform entitiesParent;
-    [SerializeField] private Entity entityPrefab;
+    [SerializeField] private GameObject entityPrefab;
 
     private Dictionary<uint, Entity> entities;
 
-    private void Start()
+    private void Awake()
     {
         entities = new Dictionary<uint, Entity>();
     }
 
     public void UpdateEntity(EntityUpdateData data)
     {
-        print("Entity update: " + data.id + "   " + data.pos);
         Entity entity;
         if (!entities.ContainsKey(data.id))
         {
-            entity = Instantiate(entityPrefab, data.pos, Quaternion.identity, entitiesParent);
+            entity = Instantiate(entityPrefab, data.pos, Quaternion.identity, entitiesParent).GetComponent<Entity>();
             entities.Add(data.id, entity);
         }
         else

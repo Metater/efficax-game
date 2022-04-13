@@ -1,10 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Threading;
+using System;
 using UnityEngine;
 
 public class PacketManager : MonoBehaviour
 {
     public GameManager gameManager;
+
+    private ConcurrentQueue<Action> actions;
+
+    private void Awake()
+    {
+        actions = new ConcurrentQueue<Action>();
+    }
 
     private void Start()
     {
@@ -14,6 +24,18 @@ public class PacketManager : MonoBehaviour
     private void Update()
     {
         
+    }
+
+    public void ExecuteActions()
+    {
+        int actionsCount = actions.Count;
+        for (int i = 0; i < actionsCount; i++)
+        {
+            if (actions.TryDequeue(out Action action))
+                action();
+            else
+                break;
+        }
     }
 
     public void Handle(NetDataReader reader)
@@ -33,6 +55,8 @@ public class PacketManager : MonoBehaviour
     private void HandleEntityUpdate(NetDataReader reader)
     {
         EntityUpdateData data = new EntityUpdateData().Read(reader);
-        gameManager.entityManager.UpdateEntity(data);
+        actions.Enqueue(() => {
+            gameManager.entityManager.UpdateEntity(data);
+        });
     }
 }

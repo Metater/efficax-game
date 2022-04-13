@@ -282,7 +282,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameManager: {fileID: 1277084299}
   entitiesParent: {fileID: 1963906678}
-  entityPrefab: {fileID: -3291067596503432205, guid: b9bdfc82760344f4ead85df9552f1a6e, type: 3}
+  entityPrefab: {fileID: 7642203330335510490, guid: b9bdfc82760344f4ead85df9552f1a6e, type: 3}
 --- !u!114 &1277084302
 MonoBehaviour:
   m_ObjectHideFlags: 0

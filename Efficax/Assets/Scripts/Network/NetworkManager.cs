@@ -59,9 +59,8 @@ public class NetworkManager : TcpClient
     protected override void OnReceived(byte[] buffer, long offset, long size)
     {
         //Debug.Log(Encoding.UTF8.GetString(buffer, (int)offset, (int)size));
-        Debug.Log("got data: " + size);
-        NetDataReader reader = new NetDataReader(buffer);
-        while (!reader.EndOfData)
+        NetDataReader reader = new NetDataReader(buffer, (int)offset, (int)size);
+        while (reader.AvailableBytes > 0)
         {
             packetManager.Handle(reader);
         }

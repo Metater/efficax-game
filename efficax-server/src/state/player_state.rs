@@ -25,7 +25,7 @@ impl PlayerState {
 
     pub fn apply_input(&mut self) {
         let dir = self.last_input;
-        let mag = 1.0 * (1.0 / 40.0);
+        let mag = 4.0 * (1.0 / 40.0);
         let dia_mag = mag * 0.70710678118;
         match dir {
             0 => (),

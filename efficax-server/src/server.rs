@@ -97,13 +97,18 @@ impl EfficaxServer {
     pub fn tick(&mut self) {
         self.state.tick();
 
-        for player in &self.players {
-            self.sender.send(NetworkSenderMessage::Data(
-                NetworkPacket::new(*player.0, NetworkData::EntityUpdate(EntityUpdateData {
-                    id: player.1.id,
-                    pos: player.1.pos,
-                }))
-            )).ok();   
+        let addrs: Vec<SocketAddr> = self.players.keys().copied().collect();
+
+        for player in &mut self.players {
+            player.1.apply_input();
+            for &addr in &addrs {
+                self.sender.send(NetworkSenderMessage::Data(
+                    NetworkPacket::new(addr, NetworkData::EntityUpdate(EntityUpdateData {
+                        id: player.1.id,
+                        pos: player.1.pos,
+                    }))
+                )).ok();
+            }  
         }
     }
 

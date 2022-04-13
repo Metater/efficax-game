@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
 
     private ulong ticks = 0;
 
+    //private TcpChatServer.ChatServer test;
+
     private void Start()
     {
         networkManager = new NetworkManager(packetManager, "127.0.0.1", 8080);
@@ -21,15 +23,23 @@ public class GameManager : MonoBehaviour
         {
             print("Connected!");
         }
+
+        //test = TcpChatServer.Program.Test();
+    }
+
+    private void Update()
+    {
+        packetManager.ExecuteActions();
     }
 
     private void FixedUpdate()
     {
         if (!networkManager.IsConnected)
             return;
+        //networkManager.ReceiveAsync();
+        //test.Multicast(new byte[] { 2, 0, 0, 0, 0, 0, 0, 0, 0 });
         if (ticks % 2 == 0)
         {
-            networkManager.ReceiveAsync();
             networkManager.SendAsync(new byte[] { 0, GetInput() });
         }
         ticks++;

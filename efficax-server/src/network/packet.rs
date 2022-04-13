@@ -32,7 +32,7 @@ impl NetworkPacket {
         }
     }
 
-    pub async fn send(&self, writer: &OwnedWriteHalf) {
+    pub async fn send(&self, writer: &mut OwnedWriteHalf) {
         let mut buf = Vec::new();
         match &self.data {
             NetworkData::EntityUpdate(data) => {
@@ -51,10 +51,7 @@ impl NetworkPacket {
         if let Err(_) = writer.writable().await {
             println!("[network sender]: error waiting for socket to become writable for client: {}", self.addr);
         }
-        match writer.write_all(&buf) {
-            Ok(_) => (),
-            Err(_) => println!("[network sender]: error writing to client: {}", self.addr)
-            /*
+        match writer.write(&buf).await {
             Ok(0) => {
                 println!("[network sender]: wrote zero bytes to client: {}", self.addr);
             }
@@ -67,7 +64,6 @@ impl NetworkPacket {
             Err(e) => {
                 println!("[network sender]: error: {} while writing to client: {}", e, self.addr);
             }
-            */
         };
     }
 }

@@ -7,5 +7,8 @@ using UnityEngine;
 
 public class Entity : MonoBehaviour
 {
-
+    private void Start()
+    {
+        print("created entity");
+    }
 }

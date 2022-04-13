@@ -20,6 +20,9 @@ async fn main() {
 
     server::run(rx, tx).await;
 
+    // allow server.stop to be called eventually by ctrl c
+    // find out what delays network.stop
+
     println!("[server]: stopped");
-    sleep(Duration::from_secs(5)).await;
+    //sleep(Duration::from_secs(5)).await;
 }
