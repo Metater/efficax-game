@@ -26,7 +26,7 @@ public class PacketManager : MonoBehaviour
         
     }
 
-    public void ExecuteActions()
+    public void ExecuteQueuedActions()
     {
         int actionsCount = actions.Count;
         for (int i = 0; i < actionsCount; i++)

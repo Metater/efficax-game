@@ -30,7 +30,7 @@ public class EntityManager : MonoBehaviour
         else
         {
             entity = entities[data.id];
-            entity.transform.position = data.pos;
         }
+        entity.UpdateEnity(data.pos);
     }
 }

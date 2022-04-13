@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        packetManager.ExecuteActions();
+        packetManager.ExecuteQueuedActions();
     }
 
     private void FixedUpdate()

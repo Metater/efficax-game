@@ -97,6 +97,7 @@ impl EfficaxServer {
     pub fn tick(&mut self) {
         self.state.tick();
 
+        // send packets updates for each player to each player
         let addrs: Vec<SocketAddr> = self.players.keys().copied().collect();
 
         for player in &mut self.players {
