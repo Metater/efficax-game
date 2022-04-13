@@ -2,9 +2,9 @@ use std::net::SocketAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use std::thread::{sleep};
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap};
 
-use cgmath::{Point2, Vector2};
+use cgmath::{Vector2};
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::task::{self};
@@ -13,10 +13,8 @@ use crate::network::data::NetworkData;
 use crate::network::data::entity_update::EntityUpdateData;
 use crate::network::message::{NetworkListenerMessage, NetworkSenderMessage};
 use crate::network::packet::NetworkPacket;
-use crate::state::player_state::PlayerState;
-use crate::state::{EfficaxState};
 
-pub async fn run(mut rx: UnboundedReceiver<NetworkListenerMessage>, tx: UnboundedSender<NetworkSenderMessage>) {
+pub async fn run(mut listener_rx: UnboundedReceiver<NetworkListenerMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) {
     task::spawn_blocking(move || {
         let start_time = Instant::now();
         let mut server = EfficaxServer::new(tx);

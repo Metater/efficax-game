@@ -9,11 +9,13 @@ public class PacketManager : MonoBehaviour
 {
     public GameManager gameManager;
 
-    private ConcurrentQueue<Action> actions;
+    private ConcurrentQueue<Action> updateQueue;
+    private ConcurrentQueue<Action> fixedUpdateQueue;
 
     private void Awake()
     {
-        actions = new ConcurrentQueue<Action>();
+        updateQueue = new ConcurrentQueue<Action>();
+        fixedUpdateQueue = new ConcurrentQueue<Action>();
     }
 
     private void Start()
@@ -26,16 +28,14 @@ public class PacketManager : MonoBehaviour
         
     }
 
-    public void ExecuteQueuedActions()
+    public void ExecuteQueuedUpdates()
     {
-        int actionsCount = actions.Count;
-        for (int i = 0; i < actionsCount; i++)
-        {
-            if (actions.TryDequeue(out Action action))
-                action();
-            else
-                break;
-        }
+        ExecuteActions(updateQueue);
+    }
+
+    public void ExecuteQueuedFixedUpdates()
+    {
+        ExecuteActions(fixedUpdateQueue);
     }
 
     public void Handle(NetDataReader reader)
@@ -55,8 +55,20 @@ public class PacketManager : MonoBehaviour
     private void HandleEntityUpdate(NetDataReader reader)
     {
         EntityUpdateData data = new EntityUpdateData().Read(reader);
-        actions.Enqueue(() => {
+        updateQueue.Enqueue(() => {
             gameManager.entityManager.UpdateEntity(data);
         });
+    }
+
+    private static void ExecuteActions(ConcurrentQueue<Action> actions)
+    {
+        int actionsCount = actions.Count;
+        for (int i = 0; i < actionsCount; i++)
+        {
+            if (actions.TryDequeue(out Action action))
+                action();
+            else
+                break;
+        }
     }
 }

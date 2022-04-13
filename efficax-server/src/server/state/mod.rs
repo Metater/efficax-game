@@ -1,14 +1,14 @@
 pub mod player_state;
 
-pub struct EfficaxState {
+pub struct ServerState {
     pub tick_id: u64,
 
     next_entity_id: u32,
 }
 
-impl EfficaxState {
-    pub fn new() -> EfficaxState {
-        EfficaxState {
+impl ServerState {
+    pub fn new() -> ServerState {
+        ServerState {
             tick_id: 0,
 
             next_entity_id: 0

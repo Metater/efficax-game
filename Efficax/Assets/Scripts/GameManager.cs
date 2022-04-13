@@ -29,11 +29,13 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        packetManager.ExecuteQueuedActions();
+        packetManager.ExecuteQueuedUpdates();
     }
 
     private void FixedUpdate()
     {
+        packetManager.ExecuteQueuedFixedUpdates();
+
         if (!networkManager.IsConnected)
             return;
         //networkManager.ReceiveAsync();
