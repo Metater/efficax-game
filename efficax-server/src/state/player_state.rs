@@ -1,16 +1,16 @@
-use cgmath::Point2;
+use cgmath::{Vector2};
 
 use crate::network::data::input::InputData;
 
 pub struct PlayerState {
     pub id: u32,
-    pub pos: Point2<f64>,
+    pub pos: Vector2<f64>,
 
     last_input: u8,
 }
 
 impl PlayerState {
-    pub fn new(id: u32, pos: Point2<f64>) -> PlayerState {
+    pub fn new(id: u32, pos: Vector2<f64>) -> PlayerState {
         PlayerState {
             id,
             pos,
@@ -19,11 +19,11 @@ impl PlayerState {
         }
     }
 
-    pub fn feed_input(&self, data: &InputData) {
+    pub fn feed_input(&mut self, data: &InputData) {
         self.last_input = data.input % 9;
     }
 
-    pub fn apply_input(&self) {
+    pub fn apply_input(&mut self) {
         let dir = self.last_input;
         let mag = 1.0 * (1.0 / 40.0);
         let dia_mag = mag * 0.70710678118;

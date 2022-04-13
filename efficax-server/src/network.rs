@@ -2,7 +2,7 @@ pub mod message;
 pub mod packet;
 pub mod data;
 
-use tokio::{net::{TcpListener, tcp::{OwnedReadHalf, OwnedWriteHalf}}, task::JoinHandle};
+use tokio::{net::{TcpListener, tcp::{OwnedReadHalf, OwnedWriteHalf}}, task::JoinHandle, io::AsyncWriteExt};
 use tokio::sync::mpsc::{self, UnboundedSender, UnboundedReceiver};
 
 use std::{io::{self, Cursor}, net::SocketAddr, collections::HashMap};
@@ -128,8 +128,13 @@ impl EfficaxNetwork {
                     clients.insert(addr, writer);
                 }
                 NetworkSenderMessage::Data(packet) => {
-                    if let Some(writer) = clients.get(&packet.addr) {
+                    if let Some(writer) = clients.get_mut(&packet.addr) {
                         packet.send(writer).await;
+                        /*
+                        if let Err(e) = writer.flush().await {
+                            println!("[network sender]: error: {} flushing data: {:?} to client: {}", e, packet.data, packet.addr);
+                        }
+                        */
                     }
                     else {
                         println!("[network sender]: tried to send data: {:?} to missing client: {}", packet.data, packet.addr);

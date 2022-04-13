@@ -32,12 +32,14 @@ public class NetworkManager : TcpClient
         //bool s = SendAsync(new byte[] { 1, 48, 69, 20, 64, 61, 64 });
         //Debug.Log("Sent data: " + s);
 
+        /*
         byte[] b = Encoding.UTF8.GetBytes("Hello, world!");
         byte[] buf = new byte[b.Length + 1];
         buf[0] = 1;
         b.CopyTo(buf, 1);
         bool se = SendAsync(buf);
         Debug.Log("Sent data: " + se);
+        */
     }
 
     protected override void OnDisconnected()
@@ -57,7 +59,12 @@ public class NetworkManager : TcpClient
     protected override void OnReceived(byte[] buffer, long offset, long size)
     {
         //Debug.Log(Encoding.UTF8.GetString(buffer, (int)offset, (int)size));
-        packetManager.Handle(new NetDataReader(buffer, (int)offset, (int)size));
+        Debug.Log("got data: " + size);
+        NetDataReader reader = new NetDataReader(buffer);
+        while (!reader.EndOfData)
+        {
+            packetManager.Handle(reader);
+        }
     }
 
     protected override void OnError(SocketError error)

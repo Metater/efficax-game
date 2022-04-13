@@ -14,7 +14,7 @@ public class DataUtils
     }
     public static Vector2 ReadPos(NetDataReader reader)
     {
-        return new Vector2(UnscaleUIntToFloat(-256, 256, reader.GetUInt()), UnscaleUIntToFloat(-256, 256, reader.GetUInt()));
+        return new Vector2(UnscaleUIntToFloat(-256, 256, reader.GetUShort()), UnscaleUIntToFloat(-256, 256, reader.GetUShort()));
     }
 
     public static uint ScaleFloatToUInt(float lower, float upper, float value)

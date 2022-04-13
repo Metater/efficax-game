@@ -2,11 +2,11 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use std::io;
 
-use cgmath::Point2;
+use cgmath::Vector2;
 
-pub async fn write_pos(buf: &mut Vec<u8>, pos: Point2<f64>) -> io::Result<()> {
-    buf.write_u16(scale_f64_as_u16(-256.0, 256.0, pos.x)).await?;
-    buf.write_u16(scale_f64_as_u16(-256.0, 256.0, pos.y)).await?;
+pub async fn write_pos(buf: &mut Vec<u8>, pos: Vector2<f64>) -> io::Result<()> {
+    buf.write_u16_le(scale_f64_as_u16(-256.0, 256.0, pos.x)).await?;
+    buf.write_u16_le(scale_f64_as_u16(-256.0, 256.0, pos.y)).await?;
     Ok(())
 }
 

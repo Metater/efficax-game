@@ -21,17 +21,17 @@ public class EntityManager : MonoBehaviour
 
     public void UpdateEntity(EntityUpdateData data)
     {
+        print("Entity update: " + data.id + "   " + data.pos);
         Entity entity;
         if (!entities.ContainsKey(data.id))
         {
-            entity = Instantiate(entityPrefab, Vector3.zero, Quaternion.identity, entitiesParent);
+            entity = Instantiate(entityPrefab, data.pos, Quaternion.identity, entitiesParent);
             entities.Add(data.id, entity);
         }
         else
         {
             entity = entities[data.id];
+            entity.transform.position = data.pos;
         }
-
-        entity.transform.position = data.pos;
     }
 }

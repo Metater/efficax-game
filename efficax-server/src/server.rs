@@ -1,9 +1,10 @@
 use std::net::SocketAddr;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use std::thread::{sleep};
 use std::collections::{HashSet, HashMap};
 
-use cgmath::Point2;
+use cgmath::{Point2, Vector2};
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::task::{self};
@@ -20,6 +21,9 @@ pub async fn run(mut rx: UnboundedReceiver<NetworkListenerMessage>, tx: Unbounde
         let start_time = Instant::now();
         let mut server = EfficaxServer::new(tx);
         'main_loop: loop {
+            if !*server.run.get_mut() {
+                break 'main_loop;
+            }
             server.start_tick();
             'recv_loop: loop {
                 match rx.try_recv() {
@@ -45,6 +49,8 @@ pub async fn run(mut rx: UnboundedReceiver<NetworkListenerMessage>, tx: Unbounde
 }
 
 struct EfficaxServer {
+    run: AtomicBool,
+    
     tick_start: Instant,
     carryover_time: Duration,
     tick_period: Duration,
@@ -59,6 +65,8 @@ struct EfficaxServer {
 impl EfficaxServer {
     pub fn new(sender: UnboundedSender<NetworkSenderMessage>) -> Self {
         EfficaxServer {
+            run: AtomicBool::new(true),
+
             tick_start: Instant::now(),
             carryover_time: Duration::default(),
             tick_period: Duration::from_millis(40),
@@ -72,7 +80,7 @@ impl EfficaxServer {
     }
 
     pub fn stop(&mut self) {
-
+        self.run.store(false, Ordering::Relaxed);
     }
 
     pub fn start_tick(&mut self) {
@@ -90,11 +98,10 @@ impl EfficaxServer {
         self.state.tick();
 
         for player in &self.players {
-            let pos = player.1.pos;
             self.sender.send(NetworkSenderMessage::Data(
                 NetworkPacket::new(*player.0, NetworkData::EntityUpdate(EntityUpdateData {
                     id: player.1.id,
-                    pos,
+                    pos: player.1.pos,
                 }))
             )).ok();   
         }
@@ -110,13 +117,13 @@ impl EfficaxServer {
     
     fn handle_join(&mut self, addr: SocketAddr) {
         println!("[server]: client: {} joined server", addr);
-        self.players.insert(addr, PlayerState::new(self.state.get_next_entity_id(), Point2::new(0.0, 0.0)));
+        self.players.insert(addr, PlayerState::new(self.state.get_next_entity_id(), Vector2::new(0.0, 0.0)));
     }
 
     fn handle_data(&mut self, packet: NetworkPacket) {
         match packet.data {
             NetworkData::Input(ref data) => {
-                if let Some(player) = self.players.get(&packet.addr) {
+                if let Some(player) = self.players.get_mut(&packet.addr) {
                     player.feed_input(data);
                 }
                 //println!("client {} sent input data: {}", packet.from, data.input);

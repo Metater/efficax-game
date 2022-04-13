@@ -10,9 +10,12 @@ public class GameManager : MonoBehaviour
 
     public NetworkManager networkManager;
 
+    private ulong ticks = 0;
+
     private void Start()
     {
         networkManager = new NetworkManager(packetManager, "127.0.0.1", 8080);
+        networkManager.OptionNoDelay = true;
         print("Client connecting...");
         if (networkManager.ConnectAsync())
         {
@@ -20,9 +23,34 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
-        
+        if (!networkManager.IsConnected)
+            return;
+        if (ticks % 2 == 0)
+        {
+            networkManager.ReceiveAsync();
+            networkManager.SendAsync(new byte[] { 0, GetInput() });
+        }
+        ticks++;
+    }
+
+    private byte GetInput()
+    {
+        bool w = Input.GetKey(KeyCode.W);
+        bool s = Input.GetKey(KeyCode.S);
+        bool a = Input.GetKey(KeyCode.A);
+        bool d = Input.GetKey(KeyCode.D);
+        if (!w && !s && !a && !d) return 0;
+        if (w && !s && !a && !d) return 1;
+        if (w && !s && !a && d) return 2;
+        if (!w && !s && !a && d) return 3;
+        if (!w && s && !a && d) return 4;
+        if (!w && s && !a && !d) return 5;
+        if (!w && s && a && !d) return 6;
+        if (!w && !s && a && !d) return 7;
+        if (w && !s && a && !d) return 8;
+        return 0;
     }
 
     private void OnApplicationQuit()

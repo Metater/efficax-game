@@ -1,7 +1,7 @@
 use std::io::{self, Cursor};
 use std::{net::SocketAddr};
 
-use tokio::io::{AsyncReadExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::tcp::OwnedWriteHalf;
 
 use super::data::NetworkData;
@@ -47,11 +47,14 @@ impl NetworkPacket {
         };
     }
 
-    async fn send_buf(&self, writer: &OwnedWriteHalf, buf: Vec<u8>) {
+    async fn send_buf(&self, writer: &mut OwnedWriteHalf, buf: Vec<u8>) {
         if let Err(_) = writer.writable().await {
             println!("[network sender]: error waiting for socket to become writable for client: {}", self.addr);
         }
-        match writer.try_write(&buf) {
+        match writer.write_all(&buf) {
+            Ok(_) => (),
+            Err(_) => println!("[network sender]: error writing to client: {}", self.addr)
+            /*
             Ok(0) => {
                 println!("[network sender]: wrote zero bytes to client: {}", self.addr);
             }
@@ -64,6 +67,7 @@ impl NetworkPacket {
             Err(e) => {
                 println!("[network sender]: error: {} while writing to client: {}", e, self.addr);
             }
+            */
         };
     }
 }
