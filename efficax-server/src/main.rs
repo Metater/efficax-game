@@ -3,24 +3,34 @@ mod network;
 
 // Next packet index = 3
 
+use std::io::{stdin, stdout, Read, Write};
+
 use crate::network::EfficaxNetwork;
 
 #[tokio::main]
 async fn main() {
     println!("[server]: Hello, world!");
 
+    // ensure all constructors have -> Self
+    // std, other libs, efficax
+
     let (network, listener_rx, sender_tx) = EfficaxNetwork::start().await;
+    let (server, server_task) = server::start(listener_rx, sender_tx).await;
 
     ctrlc::set_handler(move || {
         println!("[server]: stopping");
         network.stop();
+        server.stop();
     }).expect("Error setting Ctrl-C handler");
 
-    server::run(listener_rx, sender_tx).await;
+    server_task.await.unwrap();
 
     // allow server.stop to be called eventually by ctrl c
     // find out what delays network.stop
 
     println!("[server]: stopped");
-    //sleep(Duration::from_secs(5)).await;
+
+    println!("[server]: Press Enter to continue...");
+    stdout().flush().unwrap();
+    stdin().read(&mut [0]).unwrap();
 }

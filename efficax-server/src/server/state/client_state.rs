@@ -2,18 +2,18 @@ use cgmath::{Vector2};
 
 use crate::network::data::input::InputData;
 
-pub struct PlayerState {
+pub struct ClientState {
     pub id: u32,
     pub pos: Vector2<f64>,
 
     last_input: u8,
 }
 
-impl PlayerState {
-    pub fn new(id: u32, pos: Vector2<f64>) -> PlayerState {
-        PlayerState {
+impl ClientState {
+    pub fn new(id: u32) -> Self {
+        ClientState {
             id,
-            pos,
+            pos: Vector2::new(0.0, 0.0),
 
             last_input: 0,
         }

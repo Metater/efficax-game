@@ -55,7 +55,7 @@ public class PacketManager : MonoBehaviour
     private void HandleEntityUpdate(NetDataReader reader)
     {
         EntityUpdateData data = new EntityUpdateData().Read(reader);
-        updateQueue.Enqueue(() => {
+        fixedUpdateQueue.Enqueue(() => {
             gameManager.entityManager.UpdateEntity(data);
         });
     }
