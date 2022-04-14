@@ -48,7 +48,7 @@ public class GameManager : MonoBehaviour
             if (lastInput != input)
             {
                 lastInput = input;
-                networkManager.SendAsync(new byte[] { 0, GetInput() });
+                networkManager.SendAsync(new byte[] { 0, input });
             }
         }
         ticks++;
@@ -56,20 +56,11 @@ public class GameManager : MonoBehaviour
 
     private byte GetInput()
     {
-        bool w = Input.GetKey(KeyCode.W);
-        bool s = Input.GetKey(KeyCode.S);
-        bool a = Input.GetKey(KeyCode.A);
-        bool d = Input.GetKey(KeyCode.D);
-        if (!w && !s && !a && !d) return 0;
-        if (w && !s && !a && !d) return 1;
-        if (w && !s && !a && d) return 2;
-        if (!w && !s && !a && d) return 3;
-        if (!w && s && !a && d) return 4;
-        if (!w && s && !a && !d) return 5;
-        if (!w && s && a && !d) return 6;
-        if (!w && !s && a && !d) return 7;
-        if (w && !s && a && !d) return 8;
-        return 0;
+        Vector2 moveVector = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        if (moveVector == Vector2.zero)
+            return 0;
+        float angle = 0.5f - (Mathf.Atan2(-moveVector.x, -moveVector.y) / (-2 * Mathf.PI));
+        return (byte)(Mathf.RoundToInt(angle * 8) + 1);
     }
 
     private void OnApplicationQuit()
