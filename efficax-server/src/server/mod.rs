@@ -129,7 +129,6 @@ impl EfficaxServer {
                     NetworkPacket::new(addr, NetworkData::EntityUpdate(EntityUpdateData {
                         id: player.id,
                         pos: player.pos,
-                        rotation: player.last_input
                     }))
                 )).ok();
             }  

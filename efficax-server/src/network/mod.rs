@@ -1,7 +1,6 @@
 // file mods
 pub mod message;
 pub mod packet;
-pub mod utils;
 
 // dir mods
 pub mod data;

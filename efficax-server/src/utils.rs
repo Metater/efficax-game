@@ -45,9 +45,9 @@ pub fn unscale_u8_as_f64(lower: f64, upper: f64, value: u8) -> f64 {
     lerp(lower, upper, step)
 }
 
-fn lerp(a: f64, b: f64, t: f64) -> f64 {
+pub fn lerp(a: f64, b: f64, t: f64) -> f64 {
     a + t * (b - a)
 }
-fn linear_step(a: f64, b: f64, t: f64) -> f64 {
+pub fn linear_step(a: f64, b: f64, t: f64) -> f64 {
     (t - a) / (b - a)
 }

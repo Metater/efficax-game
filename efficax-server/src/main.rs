@@ -1,5 +1,13 @@
+// file mods
+mod utils;
+
+// dir mods
 mod server;
 mod network;
+
+// private file mods
+
+// private dir mods
 
 // Next packet index = 3
 
@@ -10,6 +18,8 @@ use crate::network::EfficaxNetwork;
 #[tokio::main]
 async fn main() {
     println!("[server]: Hello, world!");
+
+    // only allow stop once
 
     // ensure all constructors have -> Self
     // std, other libs, efficax

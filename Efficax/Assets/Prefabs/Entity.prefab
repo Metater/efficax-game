@@ -46,6 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 2337116862230769619}
+  rotateLerp: 0.4
 --- !u!50 &2337116862230769619
 Rigidbody2D:
   serializedVersion: 4
