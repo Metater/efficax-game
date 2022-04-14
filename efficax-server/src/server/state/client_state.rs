@@ -5,8 +5,7 @@ use crate::network::data::input::InputData;
 pub struct ClientState {
     pub id: u32,
     pub pos: Vector2<f64>,
-
-    last_input: u8,
+    pub last_input: u8,
 }
 
 impl ClientState {

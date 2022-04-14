@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
 
     private ulong ticks = 0;
 
+    private byte lastInput = 255;
+
     //private TcpChatServer.ChatServer test;
 
     private void Start()
@@ -42,7 +44,12 @@ public class GameManager : MonoBehaviour
         //test.Multicast(new byte[] { 2, 0, 0, 0, 0, 0, 0, 0, 0 });
         if (ticks % 2 == 0)
         {
-            networkManager.SendAsync(new byte[] { 0, GetInput() });
+            byte input = GetInput();
+            if (lastInput != input)
+            {
+                lastInput = input;
+                networkManager.SendAsync(new byte[] { 0, GetInput() });
+            }
         }
         ticks++;
     }

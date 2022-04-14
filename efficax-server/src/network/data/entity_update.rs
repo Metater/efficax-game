@@ -7,7 +7,8 @@ use crate::network::utils;
 #[derive(Debug)]
 pub struct EntityUpdateData {
     pub id: u32,
-    pub pos: Vector2<f64>
+    pub pos: Vector2<f64>,
+    pub rotation: u8
 }
 
 impl EntityUpdateData {
@@ -17,6 +18,7 @@ impl EntityUpdateData {
         buf.write_u8(EntityUpdateData::ID).await?;
         buf.write_u32_le(self.id).await?;
         utils::write_pos(buf, self.pos).await?;
+        buf.write_u8(self.rotation).await?;
         Ok(())
     }
 }

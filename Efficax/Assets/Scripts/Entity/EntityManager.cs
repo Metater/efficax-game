@@ -31,6 +31,6 @@ public class EntityManager : MonoBehaviour
         {
             entity = entities[data.id];
         }
-        entity.UpdateEnity(data.pos);
+        entity.UpdateEnity(data);
     }
 }
