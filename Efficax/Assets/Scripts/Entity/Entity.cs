@@ -13,6 +13,11 @@ public class Entity : MonoBehaviour
 
     private float desiredAngle = 0;
 
+    private void Awake()
+    {
+
+    }
+
     private void Start()
     {
         print("created entity");
@@ -20,16 +25,22 @@ public class Entity : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // TODO Eventually set rb.MovePosition every frame, interpolation for rbs only works between fixed updates
         rb.MoveRotation(Mathf.LerpAngle(transform.localEulerAngles.z, desiredAngle, rotateLerp));
     }
 
     public virtual void UpdateEnity(EntityUpdateData data)
     {
+        UpdatePosition(data.pos);
+    }
+
+    private void UpdatePosition(Vector2 pos)
+    {
         Vector2 lastPos = rb.position;
-        rb.MovePosition(data.pos);
-        if (data.pos != lastPos)
+        rb.MovePosition(pos);
+        if (pos != lastPos)
         {
-            Vector2 moveVector = data.pos - lastPos;
+            Vector2 moveVector = pos - lastPos;
             desiredAngle = Vector2.SignedAngle(Vector2.up, moveVector);
         }
     }
