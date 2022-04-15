@@ -1,0 +1,3 @@
+collision types:
+entity-entity (repulsion circle)
+entity-static (aabb)
