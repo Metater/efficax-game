@@ -9,6 +9,7 @@ pub struct ClientState {
     pub id: u32,
     pub pos: Vector2<f64>,
     pub last_input: u8,
+    pub input_sequence: u8,
 }
 
 impl ClientState {
@@ -18,23 +19,26 @@ impl ClientState {
             pos: Vector2::new(0.0, 0.0),
 
             last_input: 0,
+            input_sequence: 0
         }
     }
 
     pub fn feed_input(&mut self, data: &InputData) {
         self.last_input = data.input % 9;
+        self.input_sequence = data.input_sequence;
     }
 
-    pub fn apply_input(&mut self) {
+    pub fn apply_input(&mut self) -> bool {
         let dir = self.last_input;
         
         if dir == 0 {
-            return
+            return false
         }
         
         let mag = 16.0 * (1.0 / 40.0);
         let rot = (utils::linear_step(1.0, 9.0, dir.into()) - 0.25) * -2.0 * PI;
         self.pos.x += rot.cos() * mag;
         self.pos.y += rot.sin() * mag;
+        return true
     }
 }

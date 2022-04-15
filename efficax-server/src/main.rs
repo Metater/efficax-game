@@ -24,6 +24,8 @@ async fn main() {
     // ensure all constructors have -> Self
     // std, other libs, efficax
 
+    // add velocity epsilon
+
     let (network, listener_rx, sender_tx) = EfficaxNetwork::start().await;
     let (server, server_task) = server::start(listener_rx, sender_tx).await;
 

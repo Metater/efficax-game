@@ -13,13 +13,14 @@ public class GameManager : MonoBehaviour
     private ulong ticks = 0;
 
     private byte lastInput = 255;
+    private byte inputSequence = 0;
 
     //private TcpChatServer.ChatServer test;
 
     private void Start()
     {
-        networkManager = new NetworkManager(packetManager, "127.0.0.1", 8080);
-        networkManager.OptionNoDelay = true;
+        //networkManager = new NetworkManager(packetManager, "127.0.0.1", 8080);
+        networkManager = new NetworkManager(packetManager, "192.168.0.209", 8080);
         print("Client connecting...");
         if (networkManager.ConnectAsync())
         {
@@ -48,7 +49,7 @@ public class GameManager : MonoBehaviour
             if (lastInput != input)
             {
                 lastInput = input;
-                networkManager.SendAsync(new byte[] { 0, input });
+                networkManager.SendAsync(new byte[] { 0, input, inputSequence++ });
             }
         }
         ticks++;

@@ -22,6 +22,7 @@ use tokio::time::{Instant, Duration};
 
 use crate::network::data::NetworkData;
 use crate::network::data::entity_update::EntityUpdateData;
+use crate::network::data::tick_update::TickUpdateData;
 use crate::network::message::{NetworkListenerMessage, NetworkSenderMessage};
 use crate::network::packet::NetworkPacket;
 
@@ -122,16 +123,23 @@ impl EfficaxServer {
         let addrs = self.state.get_addrs();
         let clients = self.state.get_clients_mut();
 
+        let mut entity_updates = Vec::new();
+
         for player in clients {
-            player.apply_input();
-            for &addr in &addrs {
-                self.sender_tx.send(NetworkSenderMessage::Data(
-                    NetworkPacket::new(addr, NetworkData::EntityUpdate(EntityUpdateData {
-                        id: player.id,
-                        pos: player.pos,
-                    }))
-                )).ok();
-            }  
+            if player.apply_input() {
+                let update = EntityUpdateData {
+                    id: player.id,
+                    pos: player.pos,
+                    input_sequence: player.input_sequence,
+                };
+                entity_updates.push(update);
+            }
         }
+
+        self.sender_tx.send(NetworkSenderMessage::Data(
+            NetworkPacket::new(addrs, NetworkData::TickUpdate(TickUpdateData {
+                entity_updates
+            }))
+        )).ok();
     }
 }

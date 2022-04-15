@@ -8,6 +8,7 @@ using UnityEngine;
 public class Entity : MonoBehaviour
 {
     [SerializeField] private Rigidbody2D rb;
+    [SerializeField] private GameObject sprite;
 
     [SerializeField] private float rotateLerp;
 
@@ -21,6 +22,14 @@ public class Entity : MonoBehaviour
     private void Start()
     {
         print("created entity");
+    }
+
+    private void Update()
+    {
+        //float time = Time.time;
+        //transform.position = (new Vector2(Mathf.Sin(time) * 6, 0));
+
+        //print(transform.position.x + " : " + time);
     }
 
     private void FixedUpdate()

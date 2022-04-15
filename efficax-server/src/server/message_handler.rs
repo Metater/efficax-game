@@ -20,7 +20,7 @@ fn handle_join(server: &mut EfficaxServer, addr: SocketAddr) {
 fn handle_data(server: &mut EfficaxServer, packet: NetworkPacket) {
     match packet.data {
         NetworkData::Input(ref data) => {
-            if let Some(player) = server.state.get_client(&packet.addr) {
+            if let Some(player) = server.state.get_client(&packet.addrs[0]) {
                 player.feed_input(data);
             }
             //println!("client {} sent input data: {}", packet.from, data.input);
@@ -30,7 +30,7 @@ fn handle_data(server: &mut EfficaxServer, packet: NetworkPacket) {
         }
         _ => ()
     }
-    println!("[server]: client: {} sent packet: {:?}", packet.addr, packet.data);
+    println!("[server]: client: {} sent packet: {:?}", packet.addrs[0], packet.data);
 }
 
 fn handle_leave(server: &mut EfficaxServer, addr: SocketAddr) {

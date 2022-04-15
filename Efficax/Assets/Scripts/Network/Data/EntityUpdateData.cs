@@ -9,11 +9,13 @@ public class EntityUpdateData : IReadData<EntityUpdateData>
 {
     public uint id;
     public Vector2 pos;
+    public byte inputSequence;
 
     public EntityUpdateData Read(NetDataReader reader)
     {
         id = reader.GetUInt();
         pos = DataUtils.ReadPos(reader);
+        inputSequence = reader.GetByte();
         return this;
     }
 }

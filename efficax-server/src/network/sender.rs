@@ -35,12 +35,7 @@ impl NetworkSender {
                     clients.insert(addr, writer);
                 }
                 NetworkSenderMessage::Data(packet) => {
-                    if let Some(writer) = clients.get_mut(&packet.addr) {
-                        packet.send(writer).await;
-                    }
-                    else {
-                        println!("[network sender]: tried to send data: {:?} to missing client: {}", packet.data, packet.addr);
-                    }
+                    packet.send(&mut clients).await;
                 }
                 NetworkSenderMessage::Leave(addr) => {
                     clients.remove(&addr);

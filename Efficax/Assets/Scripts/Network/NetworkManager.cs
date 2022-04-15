@@ -14,6 +14,7 @@ public class NetworkManager : TcpClient
 
     public NetworkManager(PacketManager packetManager, string address, int port) : base(address, port)
     {
+        OptionNoDelay = true;
         this.packetManager = packetManager;
     }
 

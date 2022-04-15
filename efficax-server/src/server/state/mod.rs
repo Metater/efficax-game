@@ -4,12 +4,15 @@ use std::{net::SocketAddr, collections::HashMap};
 
 use self::client_state::ClientState;
 
+use super::metaitus::zone::MetaitusZone;
+
 pub struct ServerState {
     pub tick_id: u64,
 
     next_entity_id: u32,
 
     pub clients: HashMap<SocketAddr, ClientState>,
+    pub zone: MetaitusZone,
 }
 
 impl ServerState {
@@ -20,6 +23,7 @@ impl ServerState {
             next_entity_id: 0,
 
             clients: HashMap::new(),
+            zone: MetaitusZone::new(),
         }
     }
 

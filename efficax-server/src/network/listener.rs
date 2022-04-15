@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, io::Cursor};
+use std::{net::{SocketAddr}, io::Cursor};
 
 use tokio::{io, task::JoinHandle, sync::mpsc::UnboundedSender, net::{TcpListener, tcp::OwnedReadHalf}};
 
@@ -11,7 +11,7 @@ pub struct NetworkListener {
 
 impl NetworkListener {
     pub async fn start(listener_tx: UnboundedSender<NetworkListenerMessage>, sender_tx: &mut UnboundedSender<NetworkSenderMessage>) -> Self {
-        let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+        let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
 
         let sender_tx = sender_tx.clone();
 
@@ -36,6 +36,10 @@ impl NetworkListener {
                 Ok(client) => client,
                 Err(_) => continue
             };
+
+            if let Err(_) = stream.set_nodelay(true) {
+                continue;
+            }
     
             let (reader, writer) = stream.into_split();
     

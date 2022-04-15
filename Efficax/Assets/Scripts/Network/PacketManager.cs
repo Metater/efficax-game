@@ -43,8 +43,8 @@ public class PacketManager : MonoBehaviour
         byte packetType = reader.GetByte();
         switch (packetType)
         {
-            case 2:
-                HandleEntityUpdate(reader);
+            case 3:
+                HandleTickUpdate(reader);
                 break;
             default:
                 print($"Unknown packet type: {packetType}");
@@ -52,11 +52,14 @@ public class PacketManager : MonoBehaviour
         }
     }
 
-    private void HandleEntityUpdate(NetDataReader reader)
+    private void HandleTickUpdate(NetDataReader reader)
     {
-        EntityUpdateData data = new EntityUpdateData().Read(reader);
+        TickUpdateData data = new TickUpdateData().Read(reader);
         fixedUpdateQueue.Enqueue(() => {
-            gameManager.entityManager.UpdateEntity(data);
+            foreach (EntityUpdateData entityUpdate in data.entityUpdates)
+            {
+                gameManager.entityManager.UpdateEntity(entityUpdate);
+            }
         });
     }
 
