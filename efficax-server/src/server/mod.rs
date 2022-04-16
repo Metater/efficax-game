@@ -87,11 +87,11 @@ impl EfficaxServer {
             self.tick();
 
             // Sleep until tick perioid has elapsed
-            while self.tick_start_time.elapsed() + self.carryover_time < self.tick_period {
+            while self.get_delta_time() < self.tick_period {
                 sleep(Duration::from_millis(1));
             }
             // Carry over for sleep overrun
-            self.carryover_time = (self.tick_start_time.elapsed() + self.carryover_time) - self.tick_period;
+            self.carryover_time = self.get_delta_time() - self.tick_period;
         }
     }
 
@@ -114,32 +114,12 @@ impl EfficaxServer {
     }
 
     fn tick(&mut self) {
-        self.state.tick();
-
-        self.client_movement();
+        //let delta_time = self.get_delta_time().as_secs_f32();
+        let sender_tx = &mut self.sender_tx;
+        self.state.tick(self.tick_period.as_secs_f32(), sender_tx);
     }
 
-    fn client_movement(&mut self) {
-        let addrs = self.state.get_addrs();
-        let clients = self.state.get_clients_mut();
-
-        let mut entity_updates = Vec::new();
-
-        for player in clients {
-            if player.apply_input() {
-                let update = EntityUpdateData {
-                    id: player.id,
-                    pos: player.pos,
-                    input_sequence: player.input_sequence,
-                };
-                entity_updates.push(update);
-            }
-        }
-
-        self.sender_tx.send(NetworkSenderMessage::Data(
-            NetworkPacket::new(addrs, NetworkData::TickUpdate(TickUpdateData {
-                entity_updates
-            }))
-        )).ok();
+    fn get_delta_time(&self) -> Duration {
+        self.tick_start_time.elapsed() + self.carryover_time
     }
 }

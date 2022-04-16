@@ -1,6 +1,6 @@
 use cgmath::{Vector2, Zero, Bounded};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct PhysicsCollider {
     pub id: u32,
     pub min: Vector2<f32>,

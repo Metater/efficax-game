@@ -7,7 +7,7 @@ use crate::utils;
 #[derive(Debug)]
 pub struct EntityUpdateData {
     pub id: u32,
-    pub pos: Vector2<f64>,
+    pub pos: Vector2<f32>,
     pub input_sequence: u8,
 }
 

@@ -12,11 +12,11 @@ public class Entity : MonoBehaviour
 
     [SerializeField] private float rotateLerp;
 
-    private float desiredAngle = 0;
+    private Queue<float> desiredAngleQueue;
 
     private void Awake()
     {
-
+        desiredAngleQueue = new Queue<float>(new float[] { 0 });
     }
 
     private void Start()
@@ -35,7 +35,11 @@ public class Entity : MonoBehaviour
     private void FixedUpdate()
     {
         // TODO Eventually set rb.MovePosition every frame, interpolation for rbs only works between fixed updates
-        rb.MoveRotation(Mathf.LerpAngle(transform.localEulerAngles.z, desiredAngle, rotateLerp));
+        while (desiredAngleQueue.Count > 2)
+        {
+            desiredAngleQueue.Dequeue();
+        }
+        rb.MoveRotation(Mathf.LerpAngle(transform.localEulerAngles.z, desiredAngleQueue.Average(), rotateLerp));
     }
 
     public virtual void UpdateEnity(EntityUpdateData data)
@@ -50,7 +54,8 @@ public class Entity : MonoBehaviour
         if (pos != lastPos)
         {
             Vector2 moveVector = pos - lastPos;
-            desiredAngle = Vector2.SignedAngle(Vector2.up, moveVector);
+            float desiredAngle = Vector2.SignedAngle(Vector2.up, moveVector);
+            desiredAngleQueue.Enqueue(desiredAngle);
         }
     }
 }

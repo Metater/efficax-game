@@ -1,13 +1,14 @@
 use std::f64::consts::PI;
 
-use cgmath::{Vector2};
+use cgmath::num_traits::ToPrimitive;
+use cgmath::{Vector2, Zero};
 
 use crate::network::data::input::InputData;
 use crate::utils;
 
 pub struct ClientState {
     pub id: u32,
-    pub pos: Vector2<f64>,
+
     pub last_input: u8,
     pub input_sequence: u8,
 }
@@ -16,7 +17,6 @@ impl ClientState {
     pub fn new(id: u32) -> Self {
         ClientState {
             id,
-            pos: Vector2::new(0.0, 0.0),
 
             last_input: 0,
             input_sequence: 0
@@ -28,17 +28,17 @@ impl ClientState {
         self.input_sequence = data.input_sequence;
     }
 
-    pub fn apply_input(&mut self) -> bool {
+    pub fn get_movement_force(&self) -> Vector2<f32> {
         let dir = self.last_input;
         
         if dir == 0 {
-            return false
+            return Vector2::zero();
         }
         
-        let mag = 16.0 * (1.0 / 40.0);
+        let mag = 32.0;
         let rot = (utils::linear_step(1.0, 9.0, dir.into()) - 0.25) * -2.0 * PI;
-        self.pos.x += rot.cos() * mag;
-        self.pos.y += rot.sin() * mag;
-        return true
+        let x_force  = rot.cos() * mag;
+        let y_force = rot.sin() * mag;
+        return Vector2::new(x_force as f32, y_force as f32);
     }
 }

@@ -4,6 +4,7 @@ use cgmath::{Vector2, Zero};
 
 use super::{physics::collider::PhysicsCollider};
 
+#[derive(Debug)]
 pub struct MetaitusEntity {
     pub id: u32,
     pub pos: Vector2<f32>,
@@ -19,12 +20,15 @@ pub struct MetaitusEntity {
 
     pub has_repulsion_radius: bool,
     pub repulsion_radius: f32,
+    pub repulsion: f32,
 
     has_drag: bool,
     has_linear_drag: bool,
     drag: f32,
 
-    vel: Vector2<f32>
+    pub vel: Vector2<f32>,
+    pub moved_xy: bool,
+    pub tick_count: u32,
 }
 
 impl MetaitusEntity {
@@ -37,7 +41,7 @@ impl MetaitusEntity {
             bounds: PhysicsCollider::all(),
 
             has_vel_epsilon: true,
-            vel_epsilon: 1.0 / 16.0,
+            vel_epsilon: 1.0 / 8.0,
 
             has_collider: false,
             collider: PhysicsCollider::none(),
@@ -48,8 +52,11 @@ impl MetaitusEntity {
 
             has_repulsion_radius: false,
             repulsion_radius: 0.0,
+            repulsion: 0.0,
 
-            vel: Vector2::zero()
+            vel: Vector2::zero(),
+            moved_xy: false,
+            tick_count: 0,
         }
     }
 
@@ -85,16 +92,20 @@ impl MetaitusEntity {
 }
 
 impl MetaitusEntity {
-    pub fn tick(&mut self, timestep: f32, near_statics: &Vec<PhysicsCollider>, repulsable_entities: &Vec<(Vector2<f32>, f32)>) -> bool {
-        let mut moved_xy = false;
+    pub fn add_force(&mut self, force: Vector2<f32>, timestep: f32) {
+        self.vel += force * timestep;
+    }
+
+    pub fn tick(&mut self, timestep: f32, near_statics: &Vec<PhysicsCollider>, repulsable_entities: &Vec<(Vector2<f32>, f32, f32)>) -> bool {
+        self.moved_xy = false;
         
         if self.has_vel_epsilon {
             self.apply_vel_epsilon();
         }
 
         if !self.vel.is_zero() {
-            moved_xy = self.update_pos(timestep, near_statics);
-            if moved_xy && self.has_drag {
+            self.moved_xy = self.update_pos(timestep, near_statics);
+            if self.moved_xy && self.has_drag {
                 self.apply_drag(timestep);
             }
         }
@@ -103,11 +114,27 @@ impl MetaitusEntity {
         }
 
         // check repulsion radius
-        for (entity_pos, entity_repulsion_radius) in repulsable_entities {
-            let sqr_distance = entity_pos.deref()
+        if repulsable_entities.len() > 0 {
+            let mut repulsion_vectors_sum = Vector2::zero();
+            for (entity_pos, entity_repulsion_radius, entity_repulsion) in repulsable_entities {
+                let diff_x = entity_pos.x - self.pos.x;
+                let diff_y = entity_pos.y - self.pos.y;
+                let sqr_distance = (diff_x * diff_x) + (diff_y * diff_y);
+                let diff_rad = entity_repulsion_radius + self.repulsion_radius;
+                let req_sqr_distance = diff_rad * diff_rad;
+                if req_sqr_distance > sqr_distance {
+                    let repulsion_mag = (entity_repulsion + self.repulsion) * (1.0 / sqr_distance);
+                    let repulsion_vector = Vector2::new(diff_x, diff_y) * repulsion_mag;
+                    repulsion_vectors_sum += repulsion_vector;
+                }
+            }
+            let average_repulsion_vector = repulsion_vectors_sum / repulsable_entities.len() as f32;
+            self.add_force(average_repulsion_vector, timestep);
         }
 
-        moved_xy
+        self.tick_count += 1;
+        
+        self.moved_xy
     }
 
     fn apply_vel_epsilon(&mut self) {

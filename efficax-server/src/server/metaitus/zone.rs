@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cgmath::Vector2;
+use cgmath::{Vector2, Vector1};
 
 use super::{cell::MetaitusCell, physics::collider::PhysicsCollider, entity::MetaitusEntity};
 
@@ -8,7 +8,13 @@ pub struct MetaitusZone {
     cells: HashMap<u32, MetaitusCell>,
     // find a better way to provide statics, maybe have uniform statics, where one ref is used for like a 1x1 tile
     // then use a list of positions that map to the same static?
-    statics: HashMap<u32, Vec<PhysicsCollider>>
+    statics: HashMap<u32, Vec<PhysicsCollider>>,
+
+    next_entity_id: u32
+
+    // entity id, entity
+    // hashset of populated cell_indicies
+    // 
 }
 
 impl MetaitusZone {
@@ -21,7 +27,10 @@ impl MetaitusZone {
     pub fn new() -> Self {
         MetaitusZone {
             cells: HashMap::new(),
-            statics: HashMap::new()
+
+            statics: HashMap::new(),
+
+            next_entity_id: 0
         }
     }
 
@@ -30,7 +39,7 @@ impl MetaitusZone {
 
         let mut switched_cell_entities = Vec::new();
 
-        let mut cached_entity_data: Vec<(Vec<PhysicsCollider>, Vec<(Vector2<f32>, f32)>)> = Vec::new();
+        let mut cached_entity_data: Vec<(Vec<PhysicsCollider>, Vec<(Vector2<f32>, f32, f32)>)> = Vec::new();
 
         for cell in self.cells.values() {
             for entity in &cell.entities {
@@ -47,7 +56,7 @@ impl MetaitusZone {
                         if cell_entity.id == entity.id || !cell_entity.has_repulsion_radius {
                             continue
                         }
-                        repulsable_entities.push((cell_entity.pos, cell_entity.repulsion_radius));
+                        repulsable_entities.push((cell_entity.pos, cell_entity.repulsion_radius, cell_entity.repulsion));
                     }
                 }
                 cached_entity_data.push((near_statics, repulsable_entities));
@@ -152,6 +161,40 @@ impl MetaitusZone {
         let x = ((index as f32 % MetaitusZone::DIMENSION_CELL_LENGTH as f32) - MetaitusZone::HALF_DIMENSION_CELL_LENGTH as f32) * MetaitusZone::CELL_SIZE as f32;
         let y = ((index as f32 / MetaitusZone::DIMENSION_CELL_LENGTH as f32) - MetaitusZone::HALF_DIMENSION_CELL_LENGTH as f32) * MetaitusZone::CELL_SIZE as f32;
         return Vector2::new(x, y)
+    }
+}
+
+impl MetaitusZone {
+    pub fn spawn_entity(&mut self, pos: Vector2<f32>) -> &mut MetaitusEntity {
+        let id = self.get_next_entity_id();
+        let current_cell_index = MetaitusZone::get_index_at_pos(pos);
+
+        let mut entity = MetaitusEntity::new(id, pos, current_cell_index);
+        entity
+        .with_bounds(PhysicsCollider::new(0, Vector2::new(-4.0, -4.0), Vector2::new(4.0, 4.0)))
+        .with_drag(true, true, 2.0)
+        .with_collider(true, PhysicsCollider::new(0, Vector2::new(-0.5, -0.5), Vector2::new(0.5, 0.5)))
+        .with_repulsion_radius(true, 1.0);
+
+        let cell = self.get_cell(current_cell_index);
+        let position = cell.entities.len();
+        cell.add_entity(entity);
+        &mut cell.entities[position]
+    }
+    pub fn get_entity(&mut self, id: u32) -> Option<&mut MetaitusEntity> {
+        for cell in self.cells.values_mut() {
+            for entity in &mut cell.entities {
+                if entity.id == id {
+                    return Some(entity)
+                }
+            }
+        }
+        return None
+    }
+    fn get_next_entity_id(&mut self) -> u32 {
+        let id = self.next_entity_id;
+        self.next_entity_id += 1;
+        id
     }
 }
 
