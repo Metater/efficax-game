@@ -35,5 +35,7 @@ fn handle_data(server: &mut EfficaxServer, packet: NetworkPacket) {
 
 fn handle_leave(server: &mut EfficaxServer, addr: SocketAddr) {
     println!("[server]: client: {} left server", addr);
-    server.state.clients.remove(&addr);
+    if let Some(client) = server.state.clients.remove(&addr) {
+        server.state.zone.despawn_entity(client.id);
+    }
 }

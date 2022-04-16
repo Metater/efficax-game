@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -12,10 +13,16 @@ public class GameManager : MonoBehaviour
 
     private ulong ticks = 0;
 
-    private byte lastInput = 255;
+    private byte offInput = 0;
+    private byte lastSentInput = 255;
     private byte inputSequence = 0;
 
     //private TcpChatServer.ChatServer test;
+
+    private void Awake()
+    {
+
+    }
 
     private void Start()
     {
@@ -46,11 +53,21 @@ public class GameManager : MonoBehaviour
         if (ticks % 2 == 0)
         {
             byte input = GetInput();
-            if (lastInput != input)
+
+            if (input == 0)
             {
-                lastInput = input;
+                input = offInput;
+            }
+
+            if (lastSentInput != input)
+            {
+                lastSentInput = input;
                 networkManager.SendAsync(new byte[] { 0, input, inputSequence++ });
             }
+        }
+        else
+        {
+            offInput = GetInput();
         }
         ticks++;
     }

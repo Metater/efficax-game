@@ -20,6 +20,7 @@ pub struct MetaitusEntity {
 
     pub has_repulsion_radius: bool,
     pub repulsion_radius: f32,
+    max_repulsion_mag: f32,
     pub repulsion: f32,
 
     has_drag: bool,
@@ -41,7 +42,7 @@ impl MetaitusEntity {
             bounds: PhysicsCollider::all(),
 
             has_vel_epsilon: true,
-            vel_epsilon: 1.0 / 8.0,
+            vel_epsilon: 1.0 / 12.0,
 
             has_collider: false,
             collider: PhysicsCollider::none(),
@@ -52,6 +53,7 @@ impl MetaitusEntity {
 
             has_repulsion_radius: false,
             repulsion_radius: 0.0,
+            max_repulsion_mag: 0.0,
             repulsion: 0.0,
 
             vel: Vector2::zero(),
@@ -84,9 +86,11 @@ impl MetaitusEntity {
         self
     }
 
-    pub fn with_repulsion_radius(&mut self, has_repulsion_radius: bool, repulsion_radius: f32) -> &mut Self {
+    pub fn with_repulsion_radius(&mut self, has_repulsion_radius: bool, repulsion_radius: f32, max_repulsion_mag: f32, repulsion: f32) -> &mut Self {
         self.has_repulsion_radius = has_repulsion_radius;
         self.repulsion_radius = repulsion_radius;
+        self.max_repulsion_mag = max_repulsion_mag;
+        self.repulsion = repulsion;
         self
     }
 }
@@ -113,23 +117,29 @@ impl MetaitusEntity {
             // cannot move, velocity is zero
         }
 
-        // check repulsion radius
         if repulsable_entities.len() > 0 {
-            let mut repulsion_vectors_sum = Vector2::zero();
+            // if too much repulsion, use avg of vectors again
+            //let mut repulsion_vectors_sum = Vector2::zero();
             for (entity_pos, entity_repulsion_radius, entity_repulsion) in repulsable_entities {
                 let diff_x = entity_pos.x - self.pos.x;
                 let diff_y = entity_pos.y - self.pos.y;
                 let sqr_distance = (diff_x * diff_x) + (diff_y * diff_y);
-                let diff_rad = entity_repulsion_radius + self.repulsion_radius;
-                let req_sqr_distance = diff_rad * diff_rad;
-                if req_sqr_distance > sqr_distance {
-                    let repulsion_mag = (entity_repulsion + self.repulsion) * (1.0 / sqr_distance);
-                    let repulsion_vector = Vector2::new(diff_x, diff_y) * repulsion_mag;
-                    repulsion_vectors_sum += repulsion_vector;
+                let radius_sum = entity_repulsion_radius + self.repulsion_radius;
+                let sqr_radius_sum = radius_sum * radius_sum;
+                if sqr_radius_sum > sqr_distance {
+                    let mut repulsion_vector = Vector2::new(0.0, 1.0);
+                    if !sqr_distance.is_zero() {
+                        let mut repulsion_mag = (entity_repulsion + self.repulsion) * (1.0 / sqr_distance);
+                        repulsion_mag = repulsion_mag.clamp(-self.max_repulsion_mag, self.max_repulsion_mag);
+                        let distance = sqr_distance.sqrt();
+                        repulsion_vector = -Vector2::new(diff_x / distance, diff_y / distance) * repulsion_mag;
+                    }
+                    //repulsion_vectors_sum += repulsion_vector;
+                    self.add_force(repulsion_vector, timestep);
                 }
             }
-            let average_repulsion_vector = repulsion_vectors_sum / repulsable_entities.len() as f32;
-            self.add_force(average_repulsion_vector, timestep);
+            //let average_repulsion_vector = repulsion_vectors_sum / repulsable_entities.len() as f32;
+            //self.add_force(average_repulsion_vector, timestep);
         }
 
         self.tick_count += 1;

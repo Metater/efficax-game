@@ -36,6 +36,9 @@ impl MetaitusZone {
 
     pub fn tick(&mut self, timestep: f32) {
         // Terrible time complexity and extra memory used here
+        // Optimization: calc repulsion vector and hand over on entity tick
+
+        // CLEAN UP THIS, split into functions
 
         let mut switched_cell_entities = Vec::new();
 
@@ -171,10 +174,10 @@ impl MetaitusZone {
 
         let mut entity = MetaitusEntity::new(id, pos, current_cell_index);
         entity
-        .with_bounds(PhysicsCollider::new(0, Vector2::new(-4.0, -4.0), Vector2::new(4.0, 4.0)))
-        .with_drag(true, true, 2.0)
+        .with_bounds(PhysicsCollider::new(0, Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
+        .with_drag(true, true, 4.0)
         .with_collider(true, PhysicsCollider::new(0, Vector2::new(-0.5, -0.5), Vector2::new(0.5, 0.5)))
-        .with_repulsion_radius(true, 1.0);
+        .with_repulsion_radius(true, 0.4, 48.0, 4.0);
 
         let cell = self.get_cell(current_cell_index);
         let position = cell.entities.len();
@@ -190,6 +193,14 @@ impl MetaitusZone {
             }
         }
         return None
+    }
+    pub fn despawn_entity(&mut self, id: u32) -> Option<MetaitusEntity> {
+        for cell in self.cells.values_mut() {
+            if let Some(entity) = cell.remove_entity(id) {
+                return Some(entity);
+            }
+        }
+        return None;
     }
     fn get_next_entity_id(&mut self) -> u32 {
         let id = self.next_entity_id;
