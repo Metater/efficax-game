@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use cgmath::{Vector2, Zero};
 
 use super::{physics::collider::PhysicsCollider};
@@ -15,9 +17,8 @@ pub struct MetaitusEntity {
     has_collider: bool,
     collider: PhysicsCollider,
 
-    has_repulsion_radius: bool,
-    pub repulse_others: bool,
-    repulsion_radius: f32,
+    pub has_repulsion_radius: bool,
+    pub repulsion_radius: f32,
 
     has_drag: bool,
     has_linear_drag: bool,
@@ -46,7 +47,6 @@ impl MetaitusEntity {
             drag: 0.0,
 
             has_repulsion_radius: false,
-            repulse_others: false,
             repulsion_radius: 0.0,
 
             vel: Vector2::zero()
@@ -77,16 +77,15 @@ impl MetaitusEntity {
         self
     }
 
-    pub fn with_repulsion_radius(&mut self, has_repulsion_radius: bool, repulse_others: bool, repulsion_radius: f32) -> &mut Self {
+    pub fn with_repulsion_radius(&mut self, has_repulsion_radius: bool, repulsion_radius: f32) -> &mut Self {
         self.has_repulsion_radius = has_repulsion_radius;
-        self.repulse_others = repulse_others;
         self.repulsion_radius = repulsion_radius;
         self
     }
 }
 
 impl MetaitusEntity {
-    pub fn tick(&mut self, timestep: f32, near_statics: &Vec<PhysicsCollider>) -> bool {
+    pub fn tick(&mut self, timestep: f32, near_statics: &Vec<PhysicsCollider>, repulsable_entities: &Vec<(Vector2<f32>, f32)>) -> bool {
         let mut moved_xy = false;
         
         if self.has_vel_epsilon {
@@ -104,6 +103,9 @@ impl MetaitusEntity {
         }
 
         // check repulsion radius
+        for (entity_pos, entity_repulsion_radius) in repulsable_entities {
+            let sqr_distance = entity_pos.deref()
+        }
 
         moved_xy
     }

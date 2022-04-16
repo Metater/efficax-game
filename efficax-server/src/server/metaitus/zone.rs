@@ -30,47 +30,35 @@ impl MetaitusZone {
 
         let mut switched_cell_entities = Vec::new();
 
-        let mut entities_near_statics: Vec<Vec<PhysicsCollider>> = Vec::new();
-
-        let mut entities_cells: Vec<(&MetaitusEntity, Vec<u32>)> = Vec::new();
-
-        let mut entities_repulsion_data: Vec<Vec<(Vector2<f32>, f32)>> = Vec::new();
+        let mut cached_entity_data: Vec<(Vec<PhysicsCollider>, Vec<(Vector2<f32>, f32)>)> = Vec::new();
 
         for cell in self.cells.values() {
             for entity in &cell.entities {
                 let cell_indicies = self.get_cell_and_surrounding(entity.pos);
                 let mut near_statics = Vec::new();
+                let mut repulsable_entities = Vec::new();
                 for &cell_index in &cell_indicies {
                     if let Some(cell_statics) = self.get_cell_statics(cell_index) {
                         near_statics.append(cell_statics.clone().as_mut());
                     }
-                }
-                entities_near_statics.push(near_statics);
-                entities_cells.push((entity, cell_indicies));
-            }
-        }
-
-        for (entity, cell_indicies) in entities_cells {
-            let mut repulsion_data = Vec::new();
-            for cell_index in cell_indicies {
-                let cell = self.get_cell(cell_index);
-                for cell_entity in &cell.entities {
-                    if cell_entity.id == entity.id {
-                        continue
+                    
+                    let cell = self.get_existing_cell(cell_index);
+                    for cell_entity in &cell.entities {
+                        if cell_entity.id == entity.id || !cell_entity.has_repulsion_radius {
+                            continue
+                        }
+                        repulsable_entities.push((cell_entity.pos, cell_entity.repulsion_radius));
                     }
-                    if !cell_entity.repulse_others {
-                        continue
-                    }
-                    repulsion_data.push((cell_entity.pos))
                 }
+                cached_entity_data.push((near_statics, repulsable_entities));
             }
         }
 
         let mut entity_index = 0;
         for cell in self.cells.values_mut() {
             for entity in &mut cell.entities {
-                let near_statics = &entities_near_statics[entity_index];
-                let moved_xy = entity.tick(timestep, near_statics);
+                let (near_statics, repulsable_entities) = &cached_entity_data[entity_index];
+                let moved_xy = entity.tick(timestep, near_statics, repulsable_entities);
                 if moved_xy {
                     let last_cell_index = entity.current_cell_index;
                     entity.current_cell_index = MetaitusZone::get_index_at_pos(entity.pos);
@@ -130,6 +118,9 @@ impl MetaitusZone {
         }
 
         return self.cells.get_mut(&index).unwrap()
+    }
+    pub fn get_existing_cell(&self, index: u32) -> &MetaitusCell {
+        return self.cells.get(&index).unwrap()
     }
 
     pub fn remove_cell_at_pos(&mut self, pos: Vector2<f32>) {
