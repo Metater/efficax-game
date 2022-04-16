@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cgmath::Vector2;
 
-use super::{cell::MetaitusCell, physics::collider::PhysicsCollider};
+use super::{cell::MetaitusCell, physics::collider::PhysicsCollider, entity::MetaitusEntity};
 
 pub struct MetaitusZone {
     cells: HashMap<u32, MetaitusCell>,
@@ -25,11 +25,83 @@ impl MetaitusZone {
         }
     }
 
-    pub fn get_cell_and_surrounding(&self, pos: Vector2<f32>, cell_indicies: &mut Vec<u32>) {
+    pub fn tick(&mut self, timestep: f32) {
+        // Terrible time complexity and extra memory used here
+
+        let mut switched_cell_entities = Vec::new();
+
+        let mut entities_near_statics: Vec<Vec<PhysicsCollider>> = Vec::new();
+
+        let mut entities_cells: Vec<(&MetaitusEntity, Vec<u32>)> = Vec::new();
+
+        let mut entities_repulsion_data: Vec<Vec<(Vector2<f32>, f32)>> = Vec::new();
+
+        for cell in self.cells.values() {
+            for entity in &cell.entities {
+                let cell_indicies = self.get_cell_and_surrounding(entity.pos);
+                let mut near_statics = Vec::new();
+                for &cell_index in &cell_indicies {
+                    if let Some(cell_statics) = self.get_cell_statics(cell_index) {
+                        near_statics.append(cell_statics.clone().as_mut());
+                    }
+                }
+                entities_near_statics.push(near_statics);
+                entities_cells.push((entity, cell_indicies));
+            }
+        }
+
+        for (entity, cell_indicies) in entities_cells {
+            let mut repulsion_data = Vec::new();
+            for cell_index in cell_indicies {
+                let cell = self.get_cell(cell_index);
+                for cell_entity in &cell.entities {
+                    if cell_entity.id == entity.id {
+                        continue
+                    }
+                    if !cell_entity.repulse_others {
+                        continue
+                    }
+                    repulsion_data.push((cell_entity.pos))
+                }
+            }
+        }
+
+        let mut entity_index = 0;
+        for cell in self.cells.values_mut() {
+            for entity in &mut cell.entities {
+                let near_statics = &entities_near_statics[entity_index];
+                let moved_xy = entity.tick(timestep, near_statics);
+                if moved_xy {
+                    let last_cell_index = entity.current_cell_index;
+                    entity.current_cell_index = MetaitusZone::get_index_at_pos(entity.pos);
+                    if entity.current_cell_index != last_cell_index {
+                        switched_cell_entities.push((last_cell_index, entity.id));
+                    }
+                }
+                else {
+                    // not moving
+                }
+                entity_index += 1;
+            }
+        }
+
+        for (last_cell_index, switched_entity_id) in switched_cell_entities {
+            let last_cell = self.get_cell(last_cell_index);
+            if let Some(entity) = last_cell.remove_entity(switched_entity_id) {
+                if last_cell.entities.len() == 0 {
+                    self.remove_cell(last_cell_index);
+                }
+                let current_cell = self.get_cell(entity.current_cell_index);
+                current_cell.add_entity(entity);
+            }
+        }
+    }
+
+    pub fn get_cell_and_surrounding(&self, pos: Vector2<f32>) -> Vec<u32> {
+        let mut cell_indicies = Vec::with_capacity(9);
         let int_coords = MetaitusZone::get_int_coords_at_pos(pos);
         let x = int_coords.x;
         let y = int_coords.y;
-        let mut cell_indicies = Vec::new();
         self.push_cell_index(x, y, &mut cell_indicies);
         self.push_cell_index(x, y + 1, &mut cell_indicies);
         self.push_cell_index(x + 1, y + 1, &mut cell_indicies);
@@ -39,6 +111,7 @@ impl MetaitusZone {
         self.push_cell_index(x - 1, y - 1, &mut cell_indicies);
         self.push_cell_index(x - 1, y, &mut cell_indicies);
         self.push_cell_index(x - 1, y + 1, &mut cell_indicies);
+        cell_indicies
     }
     fn push_cell_index(&self, coord_x: u32, coord_y: u32, cell_indicies: &mut Vec<u32>) {
         let index = MetaitusZone::get_index_at_int_coords(Vector2::new(coord_x, coord_y));
@@ -92,7 +165,7 @@ impl MetaitusZone {
 }
 
 impl MetaitusZone {
-    pub fn add_cell_static(&self, index: u32, collider: PhysicsCollider) {
+    pub fn add_cell_static(&mut self, index: u32, collider: PhysicsCollider) {
         if !self.statics.contains_key(&index) {
             self.statics.insert(index, vec![collider]);
         }
@@ -103,9 +176,13 @@ impl MetaitusZone {
     pub fn get_cell_statics(&self, index: u32) -> Option<&Vec<PhysicsCollider>> {
         self.statics.get(&index)
     }
-    pub fn remove_cell_static(&self, index: u32) {
+    pub fn remove_cell_static(&mut self, index: u32, id: u32) -> bool {
         if let Some(cell_statics) = self.statics.get_mut(&index) {
-            cell_statics.
+            if let Some(index) = cell_statics.iter().position(|collider| collider.id == id) {
+                cell_statics.remove(index);
+                return true
+            }
         }
+        return  false
     }
 }

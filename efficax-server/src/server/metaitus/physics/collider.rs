@@ -2,28 +2,39 @@ use cgmath::{Vector2, Zero, Bounded};
 
 #[derive(Copy, Clone)]
 pub struct PhysicsCollider {
-    min: Vector2<f32>,
-    max: Vector2<f32>
+    pub id: u32,
+    pub min: Vector2<f32>,
+    pub max: Vector2<f32>
 }
 
 impl PhysicsCollider {
-    pub fn new(min: Vector2<f32>, max: Vector2<f32>) -> Self {
+    pub fn new(id: u32, min: Vector2<f32>, max: Vector2<f32>) -> Self {
         PhysicsCollider {
+            id,
             min,
             max
         }
     }
 
     pub fn none() -> Self {
-        PhysicsCollider::new(Vector2::zero(), Vector2::zero())
+        PhysicsCollider::new(0, Vector2::zero(), Vector2::zero())
     }
 
     pub fn all() -> Self {
-        PhysicsCollider::new(Vector2::min_value(), Vector2::max_value())
+        PhysicsCollider::new(0, Vector2::min_value(), Vector2::max_value())
+    }
+
+    pub fn is_static(&self) -> bool {
+        !self.id.is_zero()
+    }
+
+    pub fn copy_with_id(&self, id: u32) -> Self {
+        PhysicsCollider::new(id, self.min, self.max)
     }
 
     pub fn offset(&self, offset: Vector2<f32>) -> Self {
         PhysicsCollider::new(
+            self.id,
             self.min + offset,
             self.max + offset
         )
