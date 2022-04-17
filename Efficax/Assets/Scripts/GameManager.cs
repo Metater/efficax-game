@@ -26,8 +26,8 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        //networkManager = new NetworkManager(packetManager, "127.0.0.1", 8080);
-        networkManager = new NetworkManager(packetManager, "192.168.0.209", 8080);
+        networkManager = new NetworkManager(packetManager, "127.0.0.1", 8080);
+        //networkManager = new NetworkManager(packetManager, "192.168.0.209", 8080);
         print("Client connecting...");
         if (networkManager.ConnectAsync())
         {
