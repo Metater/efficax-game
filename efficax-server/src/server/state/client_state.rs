@@ -1,6 +1,5 @@
 use std::f64::consts::PI;
 
-use cgmath::num_traits::ToPrimitive;
 use cgmath::{Vector2, Zero};
 
 use crate::network::data::input::InputData;

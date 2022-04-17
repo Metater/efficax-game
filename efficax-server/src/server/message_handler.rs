@@ -4,38 +4,40 @@ use crate::{network::{message::NetworkListenerMessage, packet::NetworkPacket, da
 
 use super::EfficaxServer;
 
-pub fn handle_message(server: &mut EfficaxServer, message: NetworkListenerMessage) {
-    match message {
-        NetworkListenerMessage::Join(addr) => handle_join(server, addr),
-        NetworkListenerMessage::Data(packet) => handle_data(server, packet),
-        NetworkListenerMessage::Leave(addr) => handle_leave(server, addr),
+impl EfficaxServer {
+    pub fn handle_message(&mut self, message: NetworkListenerMessage) {
+        match message {
+            NetworkListenerMessage::Join(addr) => self.handle_join(addr),
+            NetworkListenerMessage::Data(packet) => self.handle_data(packet),
+            NetworkListenerMessage::Leave(addr) => self.handle_leave(addr),
+        }
     }
-}
-
-fn handle_join(server: &mut EfficaxServer, addr: SocketAddr) {
-    println!("[server]: client: {} joined server", addr);
-    server.state.new_client(addr);
-}
-
-fn handle_data(server: &mut EfficaxServer, packet: NetworkPacket) {
-    match packet.data {
-        NetworkData::Input(ref data) => {
-            if let Some(player) = server.state.get_client(&packet.addrs[0]) {
-                player.feed_input(data);
+    
+    fn handle_join(&mut self, addr: SocketAddr) {
+        println!("[server]: client: {} joined server", addr);
+        self.state.new_client(addr);
+    }
+    
+    fn handle_data(&mut self, packet: NetworkPacket) {
+        match packet.data {
+            NetworkData::Input(ref data) => {
+                if let Some(player) = self.state.get_client(&packet.addrs[0]) {
+                    player.feed_input(data);
+                }
+                //println!("client {} sent input data: {}", packet.from, data.input);
             }
-            //println!("client {} sent input data: {}", packet.from, data.input);
+            NetworkData::Chat(ref _data) => {
+                //println!("client {} sent chat data: {}", packet.from, data.message);
+            }
+            _ => ()
         }
-        NetworkData::Chat(ref _data) => {
-            //println!("client {} sent chat data: {}", packet.from, data.message);
-        }
-        _ => ()
+        println!("[server]: client: {} sent packet: {:?}", packet.addrs[0], packet.data);
     }
-    println!("[server]: client: {} sent packet: {:?}", packet.addrs[0], packet.data);
-}
-
-fn handle_leave(server: &mut EfficaxServer, addr: SocketAddr) {
-    println!("[server]: client: {} left server", addr);
-    if let Some(client) = server.state.clients.remove(&addr) {
-        server.state.zone.despawn_entity(client.id);
+    
+    fn handle_leave(&mut self, addr: SocketAddr) {
+        println!("[server]: client: {} left server", addr);
+        if let Some(client) = self.state.clients.remove(&addr) {
+            self.state.zone.despawn_entity(client.id);
+        }
     }
 }

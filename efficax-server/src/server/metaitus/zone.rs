@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cgmath::{Vector2, Vector1};
+use cgmath::{Vector2};
 
 use super::{cell::MetaitusCell, physics::collider::PhysicsCollider, entity::MetaitusEntity};
 

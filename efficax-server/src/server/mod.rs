@@ -20,11 +20,7 @@ use tokio::task::{self, JoinHandle};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::time::{Instant, Duration};
 
-use crate::network::data::NetworkData;
-use crate::network::data::entity_update::EntityUpdateData;
-use crate::network::data::tick_update::TickUpdateData;
 use crate::network::message::{NetworkListenerMessage, NetworkSenderMessage};
-use crate::network::packet::NetworkPacket;
 
 use self::handle::ServerHandle;
 use self::state::ServerState;
@@ -99,7 +95,7 @@ impl EfficaxServer {
         loop {
             match self.listener_rx.try_recv() {
                 Ok(message) => {
-                    message_handler::handle_message(self, message);
+                    self.handle_message(message);
                 }
                 Err(TryRecvError::Empty) => {
                     break

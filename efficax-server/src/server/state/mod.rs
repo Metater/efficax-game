@@ -9,7 +9,7 @@ use crate::network::{data::{entity_update::EntityUpdateData, NetworkData, tick_u
 
 use self::client_state::ClientState;
 
-use super::{metaitus::zone::MetaitusZone, EfficaxServer};
+use super::{metaitus::zone::MetaitusZone};
 
 pub struct ServerState {
     pub tick_id: u64,

@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use cgmath::{Vector2, Zero};
 
 use super::{physics::collider::PhysicsCollider};
