@@ -3,3 +3,5 @@ when player joins it doesnt know entities exist until it gets an update
 create joined packet that notifies client which entity is its player
 
 despawn entity packet
+
+switch to cargo workspace and move out metaitus
