@@ -19,7 +19,7 @@ use crate::network::EfficaxNetwork;
 
 #[tokio::main]
 async fn main() {
-    println!("[server]: Hello, world!");
+    println!("[server]: Hello, world!!");
 
     // only allow stop once
 

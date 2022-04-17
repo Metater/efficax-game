@@ -3,7 +3,6 @@ pub mod handle;
 pub mod message_handler;
 
 // dir mods
-pub mod metaitus;
 pub mod state;
 pub mod world;
 
