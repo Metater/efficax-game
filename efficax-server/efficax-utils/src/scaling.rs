@@ -1,15 +1,3 @@
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
-use std::io;
-
-use cgmath::Vector2;
-
-pub async fn write_pos(buf: &mut Vec<u8>, pos: Vector2<f32>) -> io::Result<()> {
-    buf.write_u16_le(scale_f32_as_u16(-256.0, 256.0, pos.x)).await?;
-    buf.write_u16_le(scale_f32_as_u16(-256.0, 256.0, pos.y)).await?;
-    Ok(())
-}
-
 pub fn scale_f32_as_u16(lower: f32, upper: f32, value: f32) -> u16 {
     let step = linear_step(lower.into(), upper.into(), value.into());
     lerp(0.0, 65535.0, step).round() as u16

@@ -1,14 +1,10 @@
 [package]
-name = "efficax-server"
+name = "efficax-utils"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-metaitus = { path = "../metaitus" }
-efficax-utils = { path = "../efficax-utils" }
-rand = "0.8.3"
 tokio = { version = "1", features = ["full"] }
-ctrlc = "3.2.1"
 cgmath = "0.18.0"

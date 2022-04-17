@@ -3,4 +3,5 @@
 members = [
     "efficax-server",
     "metaitus",
+    "efficax-utils",
 ]

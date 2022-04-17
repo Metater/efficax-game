@@ -3,7 +3,7 @@ use std::f64::consts::PI;
 use cgmath::{Vector2, Zero};
 
 use crate::network::data::input::InputData;
-use crate::utils;
+use efficax_utils::scaling;
 
 pub struct ClientState {
     pub id: u32,
@@ -35,7 +35,7 @@ impl ClientState {
         }
         
         let mag = 32.0;
-        let rot = (utils::linear_step(1.0, 9.0, dir.into()) - 0.25) * -2.0 * PI;
+        let rot = (scaling::linear_step(1.0, 9.0, dir.into()) - 0.25) * -2.0 * PI;
         let x_force  = rot.cos() * mag;
         let y_force = rot.sin() * mag;
         return Vector2::new(x_force as f32, y_force as f32);

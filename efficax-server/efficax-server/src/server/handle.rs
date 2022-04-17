@@ -18,4 +18,8 @@ impl ServerHandle {
     pub fn stop(&self) {
         self.should_stop.store(true, Ordering::Relaxed);
     }
+
+    pub fn is_running(&self) -> bool {
+        !self.should_stop.load(Ordering::Relaxed)
+    }
 }
