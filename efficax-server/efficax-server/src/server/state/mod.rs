@@ -19,6 +19,8 @@ pub struct ServerState {
 }
 
 impl ServerState {
+    const METAITUS_SUBSTEPS: i32 = 4;
+
     pub fn new() -> Self {
         ServerState {
             tick_id: 0,
@@ -31,7 +33,9 @@ impl ServerState {
     pub fn tick(&mut self, delta_time: f32, sender_tx: &mut UnboundedSender<NetworkSenderMessage>) {
         // later optimize by only doing lookups for entities once
         self.update_clients(delta_time);
-        self.zone.tick(delta_time);
+        for _ in 0..ServerState::METAITUS_SUBSTEPS {
+            self.zone.tick(delta_time / ServerState::METAITUS_SUBSTEPS as f32);
+        }
         self.send_client_updates(sender_tx);
 
         self.tick_id += 1;
@@ -54,7 +58,7 @@ impl ServerState {
 
         for player in self.clients.values() {
             if let Some(entity) = self.zone.get_entity(player.id) {
-                if entity.moved_xy || entity.tick_count == 1 {
+                if true || entity.moved_xy || entity.tick_count == 1 {
                     let update = EntityUpdateData {
                         id: entity.id,
                         pos: entity.pos,

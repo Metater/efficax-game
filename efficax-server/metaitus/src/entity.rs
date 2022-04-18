@@ -94,11 +94,11 @@ impl MetaitusEntity {
 }
 
 impl MetaitusEntity {
-    pub fn add_force(&mut self, force: Vector2<f32>, timestep: f32) {
-        self.vel += force * timestep;
+    pub fn add_force(&mut self, force: Vector2<f32>, delta_time: f32) {
+        self.vel += force * delta_time;
     }
 
-    pub fn tick(&mut self, timestep: f32, near_statics: &Vec<PhysicsCollider>, repulsable_entities: &Vec<(Vector2<f32>, f32, f32)>) -> bool {
+    pub fn tick(&mut self, delta_time: f32, near_statics: &Vec<PhysicsCollider>, repulsable_entities: &Vec<(Vector2<f32>, f32, f32)>) -> bool {
         self.moved_xy = false;
         
         if self.has_vel_epsilon {
@@ -106,9 +106,9 @@ impl MetaitusEntity {
         }
 
         if !self.vel.is_zero() {
-            self.moved_xy = self.update_pos(timestep, near_statics);
+            self.moved_xy = self.update_pos(delta_time, near_statics);
             if self.moved_xy && self.has_drag {
-                self.apply_drag(timestep);
+                self.apply_drag(delta_time);
             }
         }
         else {
@@ -133,11 +133,11 @@ impl MetaitusEntity {
                         repulsion_vector = -Vector2::new(diff_x / distance, diff_y / distance) * repulsion_mag;
                     }
                     //repulsion_vectors_sum += repulsion_vector;
-                    self.add_force(repulsion_vector, timestep);
+                    self.add_force(repulsion_vector, delta_time);
                 }
             }
             //let average_repulsion_vector = repulsion_vectors_sum / repulsable_entities.len() as f32;
-            //self.add_force(average_repulsion_vector, timestep);
+            //self.add_force(average_repulsion_vector, delta_time);
         }
 
         self.tick_count += 1;

@@ -5,3 +5,8 @@ create joined packet that notifies client which entity is its player
 despawn entity packet
 
 need to make some things u64, dont optimise
+
+auto reconnect?
+
+provide tick id to entity, have moved_xy be true if the entity moved at all that tick
+^^ remove || true to send
