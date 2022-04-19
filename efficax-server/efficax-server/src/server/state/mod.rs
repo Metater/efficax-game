@@ -19,7 +19,7 @@ pub struct ServerState {
 }
 
 impl ServerState {
-    const METAITUS_SUBSTEPS: i32 = 4;
+    const METAITUS_SUBSTEPS: i32 = 8;
 
     pub fn new() -> Self {
         ServerState {
@@ -34,7 +34,7 @@ impl ServerState {
         // later optimize by only doing lookups for entities once
         self.update_clients(delta_time);
         for _ in 0..ServerState::METAITUS_SUBSTEPS {
-            self.zone.tick(delta_time / ServerState::METAITUS_SUBSTEPS as f32);
+            self.zone.tick(self.tick_id, delta_time / ServerState::METAITUS_SUBSTEPS as f32);
         }
         self.send_client_updates(sender_tx);
 
@@ -58,7 +58,7 @@ impl ServerState {
 
         for player in self.clients.values() {
             if let Some(entity) = self.zone.get_entity(player.id) {
-                if true || entity.moved_xy || entity.tick_count == 1 {
+                if entity.last_moved_on_tick == self.tick_id {
                     let update = EntityUpdateData {
                         id: entity.id,
                         pos: entity.pos,

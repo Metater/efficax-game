@@ -34,7 +34,7 @@ impl ClientState {
             return Vector2::zero();
         }
         
-        let mag = 32.0;
+        let mag = 40.0;
         let rot = (scaling::linear_step(1.0, 9.0, dir.into()) - 0.25) * -2.0 * PI;
         let x_force  = rot.cos() * mag;
         let y_force = rot.sin() * mag;

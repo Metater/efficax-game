@@ -27,6 +27,7 @@ pub struct MetaitusEntity {
 
     pub vel: Vector2<f32>,
     pub moved_xy: bool,
+    pub last_moved_on_tick: u64,
     pub tick_count: u32,
 }
 
@@ -56,6 +57,7 @@ impl MetaitusEntity {
 
             vel: Vector2::zero(),
             moved_xy: false,
+            last_moved_on_tick: 0,
             tick_count: 0,
         }
     }
@@ -98,7 +100,7 @@ impl MetaitusEntity {
         self.vel += force * delta_time;
     }
 
-    pub fn tick(&mut self, delta_time: f32, near_statics: &Vec<PhysicsCollider>, repulsable_entities: &Vec<(Vector2<f32>, f32, f32)>) -> bool {
+    pub fn tick(&mut self, tick_id: u64, delta_time: f32, near_statics: &Vec<PhysicsCollider>, repulsable_entities: &Vec<(Vector2<f32>, f32, f32)>) -> bool {
         self.moved_xy = false;
         
         if self.has_vel_epsilon {
@@ -107,6 +109,12 @@ impl MetaitusEntity {
 
         if !self.vel.is_zero() {
             self.moved_xy = self.update_pos(delta_time, near_statics);
+            if self.moved_xy {
+                self.last_moved_on_tick = tick_id;
+                if self.has_drag {
+                    self.apply_drag(delta_time);
+                }
+            }
             if self.moved_xy && self.has_drag {
                 self.apply_drag(delta_time);
             }

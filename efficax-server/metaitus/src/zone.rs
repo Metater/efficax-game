@@ -34,7 +34,7 @@ impl MetaitusZone {
         }
     }
 
-    pub fn tick(&mut self, delta_time: f32) {
+    pub fn tick(&mut self, tick_id: u64, delta_time: f32) {
         // Terrible time complexity and extra memory used here
         // Optimization: calc repulsion vector and hand over on entity tick
 
@@ -70,7 +70,7 @@ impl MetaitusZone {
         for cell in self.cells.values_mut() {
             for entity in &mut cell.entities {
                 let (near_statics, repulsable_entities) = &cached_entity_data[entity_index];
-                let moved_xy = entity.tick(delta_time, near_statics, repulsable_entities);
+                let moved_xy = entity.tick(tick_id, delta_time, near_statics, repulsable_entities);
                 if moved_xy {
                     let last_cell_index = entity.current_cell_index;
                     entity.current_cell_index = MetaitusZone::get_index_at_pos(entity.pos);
@@ -175,7 +175,7 @@ impl MetaitusZone {
         let mut entity = MetaitusEntity::new(id, pos, current_cell_index);
         entity
         .with_bounds(PhysicsCollider::new(0, Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
-        .with_drag(true, true, 4.0)
+        .with_drag(true, true, 3.0)
         .with_collider(true, PhysicsCollider::new(0, Vector2::new(-0.475, -0.475), Vector2::new(0.475, 0.475)))
         .with_repulsion_radius(true, 0.4, 48.0, 3.0);
 
