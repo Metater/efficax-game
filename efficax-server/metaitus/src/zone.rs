@@ -174,7 +174,7 @@ impl MetaitusZone {
 
         let mut entity = MetaitusEntity::new(id, pos, current_cell_index);
         entity
-        .with_bounds(PhysicsCollider::new(0, Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
+        .with_bounds(true, PhysicsCollider::new(0, Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
         .with_drag(true, true, 3.0)
         .with_collider(true, PhysicsCollider::new(0, Vector2::new(-0.475, -0.475), Vector2::new(0.475, 0.475)))
         .with_repulsion_radius(true, 0.4, 48.0, 3.0);
@@ -221,7 +221,7 @@ impl MetaitusZone {
     pub fn get_cell_statics(&self, index: u32) -> Option<&Vec<PhysicsCollider>> {
         self.statics.get(&index)
     }
-    pub fn remove_cell_static(&mut self, index: u32, id: u32) -> bool {
+    pub fn remove_cell_static(&mut self, index: u32, id: u64) -> bool {
         if let Some(cell_statics) = self.statics.get_mut(&index) {
             if let Some(index) = cell_statics.iter().position(|collider| collider.id == id) {
                 cell_statics.remove(index);

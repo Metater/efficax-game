@@ -2,13 +2,13 @@ use cgmath::{Vector2, Zero, Bounded};
 
 #[derive(Copy, Clone, Debug)]
 pub struct PhysicsCollider {
-    pub id: u32,
+    pub id: u64,
     pub min: Vector2<f32>,
     pub max: Vector2<f32>
 }
 
 impl PhysicsCollider {
-    pub fn new(id: u32, min: Vector2<f32>, max: Vector2<f32>) -> Self {
+    pub fn new(id: u64, min: Vector2<f32>, max: Vector2<f32>) -> Self {
         PhysicsCollider {
             id,
             min,
@@ -28,7 +28,7 @@ impl PhysicsCollider {
         !self.id.is_zero()
     }
 
-    pub fn copy_with_id(&self, id: u32) -> Self {
+    pub fn copy_with_id(&self, id: u64) -> Self {
         PhysicsCollider::new(id, self.min, self.max)
     }
 

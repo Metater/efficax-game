@@ -8,6 +8,7 @@ pub struct MetaitusEntity {
     pub pos: Vector2<f32>,
     pub current_cell_index: u32,
 
+    has_bounds: bool,
     bounds: PhysicsCollider,
 
     has_vel_epsilon: bool,
@@ -38,6 +39,7 @@ impl MetaitusEntity {
             pos,
             current_cell_index,
 
+            has_bounds: false,
             bounds: PhysicsCollider::all(),
 
             has_vel_epsilon: true,
@@ -62,7 +64,8 @@ impl MetaitusEntity {
         }
     }
 
-    pub fn with_bounds(&mut self, bounds: PhysicsCollider) -> &mut Self {
+    pub fn with_bounds(&mut self, has_bounds: bool, bounds: PhysicsCollider) -> &mut Self {
+        self.has_bounds = has_bounds;
         self.bounds = bounds;
         self
     }
