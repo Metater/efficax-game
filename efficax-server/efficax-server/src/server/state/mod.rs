@@ -31,6 +31,8 @@ impl ServerState {
     }
 
     pub fn tick(&mut self, delta_time: f32, sender_tx: &mut UnboundedSender<NetworkSenderMessage>) {
+        //println!("[server state]: tick: {}", self.tick_id);
+
         // later optimize by only doing lookups for entities once
         self.update_clients(delta_time);
         for _ in 0..ServerState::METAITUS_SUBSTEPS {
