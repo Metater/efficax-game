@@ -97,7 +97,7 @@ impl EfficaxServer {
                     self.handle_message(message);
                 }
                 Err(TryRecvError::Empty) => {
-                    break
+                    return false;
                 }
                 Err(TryRecvError::Disconnected) => {
                     println!("[server]: listener channel disconnected");
@@ -105,7 +105,6 @@ impl EfficaxServer {
                 }
             }
         }
-        return false;
     }
 
     fn tick(&mut self) {

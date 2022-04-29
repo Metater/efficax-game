@@ -3,7 +3,7 @@ pub struct IdGen {
 }
 
 impl IdGen {
-    pub fn new(first_id: u64) {
+    pub fn new(first_id: u64) -> Self {
         IdGen {
             next_id: first_id
         }

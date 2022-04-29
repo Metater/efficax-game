@@ -34,9 +34,10 @@ impl ServerState {
         //println!("[server state]: tick: {}", self.tick_id);
 
         // later optimize by only doing lookups for entities once
-        self.update_clients(delta_time);
+        let step_delta_time = delta_time / ServerState::METAITUS_SUBSTEPS as f32;
         for _ in 0..ServerState::METAITUS_SUBSTEPS {
-            self.zone.tick(self.tick_id, delta_time / ServerState::METAITUS_SUBSTEPS as f32);
+            self.update_clients(step_delta_time);
+            self.zone.tick(self.tick_id, step_delta_time);
         }
         self.send_client_updates(sender_tx);
 
