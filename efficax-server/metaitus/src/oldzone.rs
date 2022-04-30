@@ -20,7 +20,7 @@ pub struct MetaitusZone {
 impl MetaitusZone {
     const DIMENSION_LENGTH: u32 = 131072;
     const CELL_SIZE: u32 = 16;
-    const HALF_CELL_SIZE: u32 = MetaitusZone::CELL_SIZE;
+    const HALF_CELL_SIZE: u32 = MetaitusZone::CELL_SIZE / 2;
     const DIMENSION_CELL_LENGTH: u32 = MetaitusZone::DIMENSION_LENGTH / MetaitusZone::CELL_SIZE;
     const HALF_DIMENSION_CELL_LENGTH: u32 = MetaitusZone::DIMENSION_CELL_LENGTH / 2;
 

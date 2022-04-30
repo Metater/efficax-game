@@ -13,6 +13,8 @@ pub struct MetaitusZone {
     cells: HashMap<u32, Vec<u64>>,
     // cell_index, statics
     statics: HashMap<u32, Vec<PhysicsCollider>>,
+    // static_id, cell_indicies
+    static_cells: HashMap<u64, Vec<u32>>,
     
     entity_id_gen: IdGen,
     static_id_gen: IdGen
@@ -21,7 +23,8 @@ pub struct MetaitusZone {
 impl MetaitusZone {
     const DIMENSION_LENGTH: u32 = 131072;
     const CELL_SIZE: u32 = 16;
-    const HALF_CELL_SIZE: u32 = Self::CELL_SIZE;
+    const BELOW_CELL_SIZE: f32 = MetaitusZone::CELL_SIZE as f32 * 0.99;
+    const HALF_CELL_SIZE: u32 = Self::CELL_SIZE / 2;
     const DIMENSION_CELL_LENGTH: u32 = Self::DIMENSION_LENGTH / Self::CELL_SIZE;
     const HALF_DIMENSION_CELL_LENGTH: u32 = Self::DIMENSION_CELL_LENGTH / 2;
 
@@ -32,6 +35,8 @@ impl MetaitusZone {
             cells: HashMap::new(),
 
             statics: HashMap::new(),
+
+            static_cells: HashMap::new(),
 
             entity_id_gen: IdGen::new(0),
             static_id_gen: IdGen::new(0)
@@ -107,7 +112,7 @@ impl MetaitusZone {
                 repulsion_mag = repulsion_mag.clamp(-entity.max_repulsion_mag, entity.max_repulsion_mag);
                 let distance = sqr_distance.sqrt();
 
-                -Vector2::new(diff_x / distance, diff_y / distance) * repulsion_mag;
+                return -Vector2::new(diff_x / distance, diff_y / distance) * repulsion_mag;
             }
         }
         Vector2::zero()
@@ -157,6 +162,9 @@ impl MetaitusZone {
 }
 
 impl MetaitusZone {
-    pub fn add_cell_static(&mut self, index: u32, entity_id: u32) {
+    pub fn add_cell_static(&mut self, collider: PhysicsCollider) {
+        let min_int_coords = Self::get_int_coords_at_pos(collider.min);
+        let max_int_coords = Self::get_int_coords_at_pos(collider.max);
+        
     }
 }
