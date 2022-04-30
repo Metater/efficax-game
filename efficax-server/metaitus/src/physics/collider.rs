@@ -8,7 +8,15 @@ pub struct PhysicsCollider {
 }
 
 impl PhysicsCollider {
-    pub fn new(id: u64, min: Vector2<f32>, max: Vector2<f32>) -> Self {
+    pub fn new(min: Vector2<f32>, max: Vector2<f32>) -> Self {
+        PhysicsCollider {
+            id: 0,
+            min,
+            max
+        }
+    }
+
+    pub fn new_with_id(id: u64, min: Vector2<f32>, max: Vector2<f32>) -> Self {
         PhysicsCollider {
             id,
             min,
@@ -17,11 +25,11 @@ impl PhysicsCollider {
     }
 
     pub fn none() -> Self {
-        PhysicsCollider::new(0, Vector2::zero(), Vector2::zero())
+        Self::new(Vector2::zero(), Vector2::zero())
     }
 
     pub fn all() -> Self {
-        PhysicsCollider::new(0, Vector2::min_value(), Vector2::max_value())
+        Self::new(Vector2::min_value(), Vector2::max_value())
     }
 
     pub fn is_static(&self) -> bool {
@@ -29,11 +37,11 @@ impl PhysicsCollider {
     }
 
     pub fn copy_with_id(&self, id: u64) -> Self {
-        PhysicsCollider::new(id, self.min, self.max)
+        Self::new_with_id(id, self.min, self.max)
     }
 
     pub fn offset(&self, offset: Vector2<f32>) -> Self {
-        PhysicsCollider::new(
+        Self::new_with_id(
             self.id,
             self.min + offset,
             self.max + offset

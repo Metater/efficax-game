@@ -39,7 +39,7 @@ impl MetaitusZone {
             static_cells: HashMap::new(),
 
             entity_id_gen: IdGen::new(0),
-            static_id_gen: IdGen::new(0)
+            static_id_gen: IdGen::new(1)
         }
     }
 
@@ -163,8 +163,41 @@ impl MetaitusZone {
 
 impl MetaitusZone {
     pub fn add_cell_static(&mut self, collider: PhysicsCollider) {
+        // assign static a static id if needed
+        let collider = if collider.is_static() {
+            collider
+        } else {
+            collider.copy_with_id(self.static_id_gen.get())
+        };
+
         let min_int_coords = Self::get_int_coords_at_pos(collider.min);
         let max_int_coords = Self::get_int_coords_at_pos(collider.max);
-        
+        for y in min_int_coords.y..=max_int_coords.y {
+            for x in min_int_coords.x..=max_int_coords.x {
+                let index = Self::get_index_at_int_coords(Vector2::new(x, y));
+
+                if let Some(statics) = self.statics.get_mut(&index) {
+                    statics.push(collider);
+                } else {
+                    self.statics.insert(index, vec![collider]);
+                }
+
+                if let Some(cell_indicies) = self.static_cells.get_mut(&collider.id) {
+                    cell_indicies.push(index);
+                } else {
+                    self.static_cells.insert(collider.id, vec![index]);
+                }
+            }
+        }
+    }
+    pub fn remove_cell_static(&mut self, id: u64) {
+        if let Some(cell_indicies) = self.static_cells.get_mut(&id) {
+            for index in cell_indicies.iter() {
+                if let Some(statics) = self.statics.get_mut(&index) {
+                    statics.retain(|static_collider| static_collider.id != id);
+                }
+            }
+            self.static_cells.remove(&id);
+        }
     }
 }
