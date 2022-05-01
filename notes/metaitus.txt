@@ -1,3 +1,5 @@
 collision types:
 entity-entity (repulsion circle)
 entity-static (aabb)
+
+make entity teleport method

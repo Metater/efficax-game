@@ -1,5 +1,7 @@
 use cgmath::{Vector2, Zero};
 
+use crate::zone::MetaitusZone;
+
 use super::{physics::collider::PhysicsCollider};
 
 #[derive(Debug)]
@@ -33,11 +35,11 @@ pub struct MetaitusEntity {
 }
 
 impl MetaitusEntity {
-    pub fn new(id: u64, pos: Vector2<f32>, current_cell_index: u32) -> Self {
+    pub fn new(id: u64, pos: Vector2<f32>) -> Self {
         MetaitusEntity {
             id,
             pos,
-            current_cell_index,
+            current_cell_index: MetaitusZone::get_index_at_pos(pos),
 
             has_bounds: false,
             bounds: PhysicsCollider::all(),

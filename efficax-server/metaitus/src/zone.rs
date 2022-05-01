@@ -136,7 +136,7 @@ impl MetaitusZone {
 }
 
 impl MetaitusZone {
-    fn get_index_at_pos(pos: Vector2<f32>) -> u32 {
+    pub fn get_index_at_pos(pos: Vector2<f32>) -> u32 {
         Self::get_index_at_int_coords(Self::get_int_coords_at_pos(pos))
     }
     fn get_index_at_int_coords(coords: Vector2<u32>) -> u32 {
@@ -149,7 +149,6 @@ impl MetaitusZone {
     fn get_int_coord(dimension: f32) -> u32 {
         (dimension as u32 / Self::CELL_SIZE) + Self::HALF_DIMENSION_CELL_LENGTH
     }
-
     fn get_cell_center_pos(index: u32) -> Vector2<f32> {
         let cell_pos = Self::get_cell_pos(index);
         Vector2::new(cell_pos.x + Self::HALF_CELL_SIZE as f32, cell_pos.y + Self::HALF_CELL_SIZE as f32)
@@ -158,6 +157,16 @@ impl MetaitusZone {
         let x = ((index as f32 % Self::DIMENSION_CELL_LENGTH as f32) - Self::HALF_DIMENSION_CELL_LENGTH as f32) * Self::CELL_SIZE as f32;
         let y = ((index as f32 / Self::DIMENSION_CELL_LENGTH as f32) - Self::HALF_DIMENSION_CELL_LENGTH as f32) * Self::CELL_SIZE as f32;
         return Vector2::new(x, y)
+    }
+}
+
+impl MetaitusZone {
+    pub fn spawn_entity(&mut self, pos: Vector2<f32>) -> &mut MetaitusEntity {
+        let id = self.entity_id_gen.get();
+        let cell_index = Self::get_index_at_pos(pos);
+        let mut entity = MetaitusEntity::new(id, pos);
+
+        let cell = 
     }
 }
 
@@ -192,8 +201,8 @@ impl MetaitusZone {
     }
     pub fn remove_cell_static(&mut self, id: u64) {
         if let Some(cell_indicies) = self.static_cells.get_mut(&id) {
-            for index in cell_indicies.iter() {
-                if let Some(statics) = self.statics.get_mut(&index) {
+            for index in cell_indicies {
+                if let Some(statics) = self.statics.get_mut(index) {
                     statics.retain(|static_collider| static_collider.id != id);
                 }
             }
