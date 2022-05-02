@@ -7,13 +7,13 @@ using UnityEngine;
 
 public class EntityUpdateData : IReadData<EntityUpdateData>
 {
-    public uint id;
+    public ulong id;
     public Vector2 pos;
     public byte inputSequence;
 
     public EntityUpdateData Read(NetDataReader reader)
     {
-        id = reader.GetUInt();
+        id = reader.GetULong();
         pos = DataUtils.ReadPos(reader);
         inputSequence = reader.GetByte();
         return this;

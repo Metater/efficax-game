@@ -8,7 +8,7 @@ use super::{physics::collider::PhysicsCollider, entity::MetaitusEntity};
 
 pub struct MetaitusZone {
     // entity_id, entity
-    entities: HashMap<u64, MetaitusEntity>,
+    pub entities: HashMap<u64, MetaitusEntity>,
     // cell_index, entities
     cells: HashMap<u32, Vec<u64>>,
     // cell_index, statics
@@ -23,7 +23,7 @@ pub struct MetaitusZone {
 impl MetaitusZone {
     const DIMENSION_LENGTH: u32 = 131072;
     const CELL_SIZE: u32 = 16;
-    const BELOW_CELL_SIZE: f32 = MetaitusZone::CELL_SIZE as f32 * 0.99;
+    //const BELOW_CELL_SIZE: f32 = MetaitusZone::CELL_SIZE as f32 * 0.99;
     const HALF_CELL_SIZE: u32 = Self::CELL_SIZE / 2;
     const DIMENSION_CELL_LENGTH: u32 = Self::DIMENSION_LENGTH / Self::CELL_SIZE;
     const HALF_DIMENSION_CELL_LENGTH: u32 = Self::DIMENSION_CELL_LENGTH / 2;
@@ -31,11 +31,8 @@ impl MetaitusZone {
     pub fn new() -> Self {
         MetaitusZone {
             entities: HashMap::new(),
-
             cells: HashMap::new(),
-
             statics: HashMap::new(),
-
             static_cells: HashMap::new(),
 
             entity_id_gen: IdGen::new(0),
@@ -53,6 +50,7 @@ impl MetaitusZone {
             entity.add_force(*repulsion_vector, delta_time);
             let moved_xy = entity.tick(tick_id, delta_time, &near_statics);
             if moved_xy {
+                // switch entity cell if entity moved cells
                 let last_cell_index = entity.current_cell_index;
                 entity.current_cell_index = Self::get_index_at_pos(entity.pos);
                 if last_cell_index != entity.current_cell_index {
@@ -139,21 +137,20 @@ impl MetaitusZone {
     pub fn get_index_at_pos(pos: Vector2<f32>) -> u32 {
         Self::get_index_at_int_coords(Self::get_int_coords_at_pos(pos))
     }
-    fn get_index_at_int_coords(coords: Vector2<u32>) -> u32 {
+    pub fn get_index_at_int_coords(coords: Vector2<u32>) -> u32 {
         (Self::DIMENSION_CELL_LENGTH * coords.y) + coords.x
     }
-
-    fn get_int_coords_at_pos(pos: Vector2<f32>) -> Vector2<u32> {
+    pub fn get_int_coords_at_pos(pos: Vector2<f32>) -> Vector2<u32> {
         Vector2::new(Self::get_int_coord(pos.x), Self::get_int_coord(pos.y))
     }
-    fn get_int_coord(dimension: f32) -> u32 {
+    pub fn get_int_coord(dimension: f32) -> u32 {
         (dimension as u32 / Self::CELL_SIZE) + Self::HALF_DIMENSION_CELL_LENGTH
     }
-    fn get_cell_center_pos(index: u32) -> Vector2<f32> {
+    pub fn get_cell_center_pos(index: u32) -> Vector2<f32> {
         let cell_pos = Self::get_cell_pos(index);
         Vector2::new(cell_pos.x + Self::HALF_CELL_SIZE as f32, cell_pos.y + Self::HALF_CELL_SIZE as f32)
     }
-    fn get_cell_pos(index: u32) -> Vector2<f32> {
+    pub fn get_cell_pos(index: u32) -> Vector2<f32> {
         let x = ((index as f32 % Self::DIMENSION_CELL_LENGTH as f32) - Self::HALF_DIMENSION_CELL_LENGTH as f32) * Self::CELL_SIZE as f32;
         let y = ((index as f32 / Self::DIMENSION_CELL_LENGTH as f32) - Self::HALF_DIMENSION_CELL_LENGTH as f32) * Self::CELL_SIZE as f32;
         return Vector2::new(x, y)
@@ -164,9 +161,23 @@ impl MetaitusZone {
     pub fn spawn_entity(&mut self, pos: Vector2<f32>) -> &mut MetaitusEntity {
         let id = self.entity_id_gen.get();
         let cell_index = Self::get_index_at_pos(pos);
-        let mut entity = MetaitusEntity::new(id, pos);
+        let entity = MetaitusEntity::new(id, pos);
 
-        let cell = 
+        if let Some(cell) = self.cells.get_mut(&cell_index) {
+            cell.push(id);
+        } else {
+            self.cells.insert(cell_index, vec![id]);
+        };
+
+        self.entities.insert(id, entity);
+        self.entities.get_mut(&id).unwrap()
+    }
+    pub fn despawn_entity(&mut self, id: u64) {
+        if let Some(entity) = self.entities.remove(&id) {
+            if let Some(cell) = self.cells.get_mut(&entity.current_cell_index) {
+                cell.retain(|&entity_id| entity_id != id);
+            }
+        }
     }
 }
 
@@ -200,6 +211,8 @@ impl MetaitusZone {
         }
     }
     pub fn remove_cell_static(&mut self, id: u64) {
+        // optimize if needed by removing the static_cells map
+        // and calculating the cell indicies on the fly
         if let Some(cell_indicies) = self.static_cells.get_mut(&id) {
             for index in cell_indicies {
                 if let Some(statics) = self.statics.get_mut(index) {

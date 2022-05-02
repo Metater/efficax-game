@@ -9,7 +9,7 @@ use crate::network::{data::{entity_update::EntityUpdateData, NetworkData, tick_u
 
 use self::client_state::ClientState;
 
-use metaitus::zone::MetaitusZone;
+use metaitus::{zone::MetaitusZone, physics::collider::PhysicsCollider};
 
 pub struct ServerState {
     pub tick_id: u64,
@@ -50,7 +50,7 @@ impl ServerState {
         for player in self.clients.values() {
             let movement_force = player.get_movement_force();
             if !movement_force.is_zero() {
-                if let Some(entity) = self.zone.get_entity(player.id) {
+                if let Some(entity) = self.zone.entities.get_mut(&player.id) {
                     entity.add_force(movement_force, delta_time);
                 }
             }
@@ -60,7 +60,7 @@ impl ServerState {
         let mut entity_updates = Vec::new();
 
         for player in self.clients.values() {
-            if let Some(entity) = self.zone.get_entity(player.id) {
+            if let Some(entity) = self.zone.entities.get(&player.id) {
                 if entity.last_moved_on_tick == self.tick_id {
                     let update = EntityUpdateData {
                         id: entity.id,
@@ -98,6 +98,13 @@ impl ServerState {
     }
     pub fn new_client(&mut self, addr: SocketAddr) {
         let entity = self.zone.spawn_entity(Vector2::zero());
+        
+        entity
+        .with_bounds(true, PhysicsCollider::new(Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
+        .with_drag(true, true, 3.0)
+        .with_collider(true, PhysicsCollider::new(Vector2::new(-0.475, -0.475), Vector2::new(0.475, 0.475)))
+        .with_repulsion_radius(true, 0.4, 48.0, 3.0);
+
         self.clients.insert(addr, ClientState::new(entity.id));
     }
 }

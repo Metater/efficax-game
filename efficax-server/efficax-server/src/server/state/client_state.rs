@@ -6,14 +6,14 @@ use crate::network::data::input::InputData;
 use efficax_utils::scaling;
 
 pub struct ClientState {
-    pub id: u32,
+    pub id: u64,
 
     pub last_input: u8,
     pub input_sequence: u8,
 }
 
 impl ClientState {
-    pub fn new(id: u32) -> Self {
+    pub fn new(id: u64) -> Self {
         ClientState {
             id,
 

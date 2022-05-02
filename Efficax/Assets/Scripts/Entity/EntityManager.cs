@@ -12,11 +12,11 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private Transform entitiesParent;
     [SerializeField] private GameObject entityPrefab;
 
-    private Dictionary<uint, Entity> entities;
+    private Dictionary<ulong, Entity> entities;
 
     private void Awake()
     {
-        entities = new Dictionary<uint, Entity>();
+        entities = new Dictionary<ulong, Entity>();
     }
 
     public void UpdateEntity(EntityUpdateData data)
