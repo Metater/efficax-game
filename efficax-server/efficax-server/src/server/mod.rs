@@ -10,8 +10,6 @@ pub mod world;
 
 // private dir mods
 
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::{sleep};
 
 use tokio::sync::mpsc::error::TryRecvError;
@@ -36,12 +34,12 @@ pub async fn start(listener_rx: UnboundedReceiver<NetworkListenerMessage>, sende
 }
 
 pub struct EfficaxServer {
-    should_stop: Arc<AtomicBool>,
+    handle: ServerHandle,
 
     listener_rx: UnboundedReceiver<NetworkListenerMessage>,
-    pub sender_tx: UnboundedSender<NetworkSenderMessage>,
+    sender_tx: UnboundedSender<NetworkSenderMessage>,
 
-    pub state: ServerState,
+    state: ServerState,
 
     start_time: Instant,
     tick_start_time: Instant,
@@ -52,7 +50,7 @@ pub struct EfficaxServer {
 impl EfficaxServer {
     pub fn new(handle: &ServerHandle, listener_rx: UnboundedReceiver<NetworkListenerMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> Self {
         EfficaxServer {
-            should_stop: handle.get_should_stop(),
+            handle: handle.get_handle(),
 
             listener_rx,
             sender_tx,
@@ -72,20 +70,22 @@ impl EfficaxServer {
     }
 
     fn main_loop(&mut self) {
-        while !self.should_stop.load(Ordering::Relaxed) {
+        while self.handle.is_running() {
             self.tick_start_time = Instant::now();
 
-            // Break on listener channel disconnect
+            // break on listener channel disconnect
             if self.recv_loop() {
                 break
             }
+
             self.tick();
 
-            // Sleep until tick perioid has elapsed
+            // sleep until tick period has elapsed
             while self.get_delta_time() < self.tick_period {
                 sleep(Duration::from_millis(1));
             }
-            // Carry over for sleep overrun
+
+            // carryover for sleep overrun
             self.carryover_time = self.get_delta_time() - self.tick_period;
         }
     }

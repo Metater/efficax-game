@@ -11,8 +11,10 @@ impl ServerHandle {
         }
     }
 
-    pub fn get_should_stop(&self) -> Arc<AtomicBool> {
-        self.should_stop.clone()
+    pub fn get_handle(&self) -> ServerHandle {
+        ServerHandle {
+            should_stop: self.should_stop.clone()
+        }
     }
     
     pub fn stop(&self) {
