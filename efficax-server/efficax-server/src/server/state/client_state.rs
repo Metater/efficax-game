@@ -2,8 +2,9 @@ use std::f64::consts::PI;
 
 use cgmath::{Vector2, Zero};
 
-use crate::network::data::input::InputData;
 use efficax_utils::scaling;
+
+use crate::network::data::input::InputData;
 
 pub struct ClientState {
     pub id: u64,
@@ -23,6 +24,7 @@ impl ClientState {
     }
 
     pub fn feed_input(&mut self, data: &InputData) {
+        // wrap around data to ensure valid input
         self.last_input = data.input % 9;
         self.input_sequence = data.input_sequence;
     }

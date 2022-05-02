@@ -5,41 +5,48 @@ use std::{net::SocketAddr, collections::HashMap};
 use cgmath::{Vector2, Zero};
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::network::{data::{entity_update::EntityUpdateData, NetworkData, tick_update::TickUpdateData}, message::NetworkSenderMessage, packet::NetworkPacket};
+use metaitus::{zone::MetaitusZone, physics::collider::PhysicsCollider};
+
+use crate::network::{data::{entity_update::EntityUpdateData, NetworkData, tick_update::TickUpdateData, input::InputData}, NetworkSenderHandle, NetworkSenderMessage};
 
 use self::client_state::ClientState;
-
-use metaitus::{zone::MetaitusZone, physics::collider::PhysicsCollider};
 
 pub struct ServerState {
     pub tick_id: u64,
 
     pub clients: HashMap<SocketAddr, ClientState>,
-    pub zone: MetaitusZone,
+
+    zone: MetaitusZone,
+
+    net: NetworkSenderHandle
 }
 
 impl ServerState {
-    const METAITUS_SUBSTEPS: i32 = 8;
+    const PHYSICS_SUBSTEPS: i32 = 8;
 
-    pub fn new() -> Self {
+    pub fn new(sender_tx: UnboundedSender<NetworkSenderMessage>) -> Self {
         ServerState {
             tick_id: 0,
 
             clients: HashMap::new(),
+
             zone: MetaitusZone::new(),
+
+            net: NetworkSenderHandle::new(sender_tx)
         }
     }
 
-    pub fn tick(&mut self, delta_time: f32, sender_tx: &mut UnboundedSender<NetworkSenderMessage>) {
+    pub fn tick(&mut self, delta_time: f32) {
         //println!("[server state]: tick: {}", self.tick_id);
 
-        // later optimize by only doing lookups for entities once
-        let step_delta_time = delta_time / ServerState::METAITUS_SUBSTEPS as f32;
-        for _ in 0..ServerState::METAITUS_SUBSTEPS {
+        // later optimize by only doing lookups for entities once per tick
+        let step_delta_time = delta_time / ServerState::PHYSICS_SUBSTEPS as f32;
+        for _ in 0..ServerState::PHYSICS_SUBSTEPS {
             self.update_clients(step_delta_time);
             self.zone.tick(self.tick_id, step_delta_time);
         }
-        self.send_client_updates(sender_tx);
+
+        self.send_client_updates();
 
         self.tick_id += 1;
     }
@@ -48,6 +55,8 @@ impl ServerState {
 impl ServerState {
     fn update_clients(&mut self, delta_time: f32) {
         for player in self.clients.values() {
+            // continual lookup of movement force when it wont change
+            // movement force is constant for the duration of the tick
             let movement_force = player.get_movement_force();
             if !movement_force.is_zero() {
                 if let Some(entity) = self.zone.entities.get_mut(&player.id) {
@@ -56,7 +65,8 @@ impl ServerState {
             }
         }
     }
-    fn send_client_updates(&mut self, sender_tx: &mut UnboundedSender<NetworkSenderMessage>) {
+    
+    fn send_client_updates(&mut self) {
         let mut entity_updates = Vec::new();
 
         for player in self.clients.values() {
@@ -73,30 +83,14 @@ impl ServerState {
         }
 
         let addrs = self.clients.keys().copied().collect();
-        sender_tx.send(NetworkSenderMessage::Data(
-            NetworkPacket::new(addrs, NetworkData::TickUpdate(TickUpdateData {
-                entity_updates
-            }))
-        )).ok();
+        self.net.multicast(addrs, NetworkData::TickUpdate(TickUpdateData {
+            entity_updates
+        }));
     }
 }
 
 impl ServerState {
-    /*
-    pub fn get_addrs(&self) -> Vec<SocketAddr> {
-        self.clients.keys().copied().collect()
-    }
-    pub fn get_clients(&self) -> Vec<&ClientState> {
-        self.clients.values().collect()
-    }
-    pub fn get_clients_mut(&mut self) -> Vec<&mut ClientState> {
-        self.clients.values_mut().collect()
-    }
-    */
-    pub fn get_client(&mut self, addr: &SocketAddr) -> Option<&mut ClientState> {
-        self.clients.get_mut(addr)
-    }
-    pub fn new_client(&mut self, addr: SocketAddr) {
+    pub fn join(&mut self, addr: SocketAddr) {
         let entity = self.zone.spawn_entity(Vector2::zero());
         
         entity
@@ -106,5 +100,16 @@ impl ServerState {
         .with_repulsion_radius(true, 0.4, 48.0, 3.0);
 
         self.clients.insert(addr, ClientState::new(entity.id));
+    }
+    pub fn leave(&mut self, addr: SocketAddr) {
+        if let Some(client) = self.clients.remove(&addr) {
+            self.zone.despawn_entity(client.id);
+        }
+    }
+
+    pub fn input_data(&mut self, addr: SocketAddr, data: &InputData) {
+        if let Some(player) = self.clients.get_mut(&addr) {
+            player.feed_input(data);
+        }
     }
 }

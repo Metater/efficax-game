@@ -2,8 +2,7 @@ use std::{net::{SocketAddr}, io::Cursor};
 
 use tokio::{io, task::JoinHandle, sync::mpsc::UnboundedSender, net::{TcpListener, tcp::OwnedReadHalf}};
 
-use super::packet::NetworkPacket;
-use super::message::{NetworkListenerMessage, NetworkSenderMessage};
+use super::{packet::NetworkPacket, NetworkListenerMessage, NetworkSenderMessage};
 
 pub struct NetworkListener {
     listener: JoinHandle<()>

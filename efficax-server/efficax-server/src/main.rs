@@ -1,16 +1,7 @@
 //#![allow(dead_code)]
 
-// file mods
-
-// dir mods
 mod server;
 mod network;
-
-// private file mods
-
-// private dir mods
-
-// Next packet index = 3
 
 use std::io::{stdin, stdout, Read, Write};
 
@@ -20,11 +11,8 @@ use crate::network::EfficaxNetwork;
 async fn main() {
     println!("[server]: Hello, world!!");
 
-    // ensure all constructors have -> Self
-    // std, other libs, efficax
-
     let (network, listener_rx, sender_tx) = EfficaxNetwork::start().await;
-    let (server, server_task) = server::start(listener_rx, sender_tx).await;
+    let (server, server_task) = server::start(listener_rx, sender_tx);
 
     ctrlc::set_handler(move || {
         if server.is_running() {

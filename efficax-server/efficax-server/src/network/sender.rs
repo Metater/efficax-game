@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::{task::JoinHandle, sync::mpsc::UnboundedReceiver};
 
-use super::message::NetworkSenderMessage;
+use super::NetworkSenderMessage;
 
 pub struct NetworkSender {
     sender: JoinHandle<()>
@@ -34,11 +34,11 @@ impl NetworkSender {
                 NetworkSenderMessage::Join((addr, writer)) => {
                     clients.insert(addr, writer);
                 }
-                NetworkSenderMessage::Data(packet) => {
-                    packet.send(&mut clients).await;
-                }
                 NetworkSenderMessage::Leave(addr) => {
                     clients.remove(&addr);
+                }
+                NetworkSenderMessage::Data(packet) => {
+                    packet.send(&mut clients).await;
                 }
             };
         }

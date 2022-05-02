@@ -5,3 +5,19 @@ create joined packet that notifies client which entity is its player
 despawn entity packet
 
 auto reconnect?
+
+put constants in central place,
+player config?
+player move force mag
+
+refactor using bincode, turn of var ints
+
+packet.rs needs to be standardized
+
+packet.rs send, tick update block contains general code that needs to be separated
+
+make a grouped packet
+
+enum for unicast or multicast packet, making a vec for everything may be wasteful?????????
+
+send_buf wierd name

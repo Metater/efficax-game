@@ -17,7 +17,14 @@ pub struct NetworkPacket {
 }
 
 impl NetworkPacket {
-    pub fn new(addrs: Vec<SocketAddr>, data: NetworkData) -> NetworkPacket {
+    pub fn unicast(addr: SocketAddr, data: NetworkData) -> Self {
+        NetworkPacket {
+            addrs: vec![addr],
+            data
+        }
+    }
+
+    pub fn multicast(addrs: Vec<SocketAddr>, data: NetworkData) -> Self {
         NetworkPacket {
             addrs,
             data
@@ -27,8 +34,8 @@ impl NetworkPacket {
     pub async fn read(addr: SocketAddr, reader: &mut Cursor<&Vec<u8>>) -> io::Result<NetworkPacket> {
         let packet_type = reader.read_u8().await?;
         match packet_type {
-            InputData::ID => Ok(NetworkPacket::new(vec![addr], NetworkData::Input(InputData::read(reader).await?))),
-            ChatData::ID =>  Ok(NetworkPacket::new(vec![addr], NetworkData::Chat(ChatData::read(reader).await?))),
+            InputData::ID => Ok(NetworkPacket::unicast(addr, NetworkData::Input(InputData::read(reader).await?))),
+            ChatData::ID =>  Ok(NetworkPacket::unicast(addr, NetworkData::Chat(ChatData::read(reader).await?))),
             _ => Err(io::Error::new(io::ErrorKind::Other, format!("bad packet type: {}", packet_type)))
         }
     }
@@ -36,6 +43,7 @@ impl NetworkPacket {
     pub async fn send(&self, clients: &mut HashMap<SocketAddr, OwnedWriteHalf>) {
         let mut buf = Vec::new();
         match &self.data {
+            // this block also contains general stuff?
             NetworkData::TickUpdate(data) => {
                 if let Err(_) = data.write(&mut buf).await {
                     println!("[network sender]: error writing data: {:?} to buffer: {:#?} for client(s): {:?}", data, buf, self.addrs);

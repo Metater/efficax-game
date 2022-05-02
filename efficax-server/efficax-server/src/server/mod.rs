@@ -1,28 +1,48 @@
-// file mods
-pub mod handle;
-pub mod message_handler;
-
-// dir mods
 pub mod state;
 pub mod world;
 
-// private file mods
-
-// private dir mods
-
+use std::net::SocketAddr;
 use std::thread::{sleep};
+use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
 
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::task::{self, JoinHandle};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::time::{Instant, Duration};
 
-use crate::network::message::{NetworkListenerMessage, NetworkSenderMessage};
+use crate::network::{NetworkListenerMessage, NetworkSenderMessage};
+use crate::network::data::NetworkData;
+use crate::network::packet::NetworkPacket;
 
-use self::handle::ServerHandle;
 use self::state::ServerState;
 
-pub async fn start(listener_rx: UnboundedReceiver<NetworkListenerMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> (ServerHandle, JoinHandle<()>) {
+pub struct ServerHandle {
+    running: Arc<AtomicBool>,
+}
+
+impl ServerHandle {
+    pub fn new() -> Self {
+        ServerHandle {
+            running: Arc::new(AtomicBool::new(true))
+        }
+    }
+
+    pub fn get_new_handle(&self) -> ServerHandle {
+        ServerHandle {
+            running: self.running.clone()
+        }
+    }
+    
+    pub fn stop(&self) {
+        self.running.store(false, Ordering::Relaxed);
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.running.load(Ordering::Relaxed)
+    }
+}
+
+pub fn start(listener_rx: UnboundedReceiver<NetworkListenerMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> (ServerHandle, JoinHandle<()>) {
     let handle =  ServerHandle::new();
     let mut server = EfficaxServer::new(&handle, listener_rx, sender_tx);
 
@@ -37,7 +57,6 @@ pub struct EfficaxServer {
     handle: ServerHandle,
 
     listener_rx: UnboundedReceiver<NetworkListenerMessage>,
-    sender_tx: UnboundedSender<NetworkSenderMessage>,
 
     state: ServerState,
 
@@ -50,16 +69,15 @@ pub struct EfficaxServer {
 impl EfficaxServer {
     pub fn new(handle: &ServerHandle, listener_rx: UnboundedReceiver<NetworkListenerMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> Self {
         EfficaxServer {
-            handle: handle.get_handle(),
+            handle: handle.get_new_handle(),
 
             listener_rx,
-            sender_tx,
 
-            state: ServerState::new(),
+            state: ServerState::new(sender_tx),
 
             start_time: Instant::now(),
             tick_start_time: Instant::now(),
-            carryover_time: Duration::default(),
+            carryover_time: Duration::ZERO,
             tick_period: Duration::from_millis(40),
         }
     }
@@ -108,12 +126,44 @@ impl EfficaxServer {
     }
 
     fn tick(&mut self) {
-        //let delta_time = self.get_delta_time().as_secs_f32();
-        let sender_tx = &mut self.sender_tx;
-        self.state.tick(self.tick_period.as_secs_f32(), sender_tx);
+        self.state.tick(self.tick_period.as_secs_f32());
     }
 
     fn get_delta_time(&self) -> Duration {
         self.tick_start_time.elapsed() + self.carryover_time
+    }
+}
+
+impl EfficaxServer {
+    pub fn handle_message(&mut self, message: NetworkListenerMessage) {
+        match message {
+            NetworkListenerMessage::Join(addr) => self.handle_join(addr),
+            NetworkListenerMessage::Leave(addr) => self.handle_leave(addr),
+            NetworkListenerMessage::Data(packet) => self.handle_data(packet),
+        }
+    }
+    
+    fn handle_join(&mut self, addr: SocketAddr) {
+        println!("[server]: client: {} joined server", addr);
+        self.state.join(addr);
+    }
+
+    fn handle_leave(&mut self, addr: SocketAddr) {
+        println!("[server]: client: {} left server", addr);
+        self.state.leave(addr);
+    }
+    
+    fn handle_data(&mut self, packet: NetworkPacket) {
+        match packet.data {
+            NetworkData::Input(ref data) => {
+                self.state.input_data(packet.addrs[0], data);
+                //println!("client {} sent input data: {}", packet.from, data.input);
+            }
+            NetworkData::Chat(ref _data) => {
+                //println!("client {} sent chat data: {}", packet.from, data.message);
+            }
+            _ => ()
+        }
+        println!("[server]: client: {} sent packet: {:?}", packet.addrs[0], packet.data);
     }
 }
