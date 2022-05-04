@@ -218,12 +218,12 @@ impl MetaitusZone {
             Entry::Occupied(_) => panic!("static id already exists when adding a static"),
             Entry::Vacant(entry) => {
                 let index = Self::get_index_at_int_coords(min_int_coords);
-                let x_length = max_int_coords.x - min_int_coords.x;
-                let y_length = max_int_coords.y - min_int_coords.y;
-                if x_length > u8::MAX as u32 || y_length > u8::MAX as u32 {
+                let x_diff = max_int_coords.x - min_int_coords.x;
+                let y_diff = max_int_coords.y - min_int_coords.y;
+                if x_diff > u8::MAX as u32 || y_diff > u8::MAX as u32 {
                     panic!("static is too large when adding static");
                 }
-                let dimensions = Vector2::new(x_length as u8, y_length as u8);
+                let dimensions = Vector2::new(x_diff as u8, y_diff as u8);
                 entry.insert((index, dimensions));
             }
         }
