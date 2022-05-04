@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, hash_map::Entry};
 
 use cgmath::{Vector2, Zero};
 
@@ -14,16 +14,18 @@ pub struct MetaitusZone {
     // cell_index, statics
     statics: HashMap<u32, Vec<PhysicsCollider>>,
     // static_id, cell_indicies
-    static_cells: HashMap<u64, Vec<u32>>,
-    
+    static_cells: HashMap<u64, (u32, Vector2<u8>)>,
+
     entity_id_gen: IdGen,
-    static_id_gen: IdGen
+    static_id_gen: IdGen,
+
+    // near_statics, repulsion_vector
+    cached_entity_data: Vec<(Vec<PhysicsCollider>, Vector2<f32>)>
 }
 
 impl MetaitusZone {
     const DIMENSION_LENGTH: u32 = 131072;
     const CELL_SIZE: u32 = 16;
-    //const BELOW_CELL_SIZE: f32 = MetaitusZone::CELL_SIZE as f32 * 0.99;
     const HALF_CELL_SIZE: u32 = Self::CELL_SIZE / 2;
     const DIMENSION_CELL_LENGTH: u32 = Self::DIMENSION_LENGTH / Self::CELL_SIZE;
     const HALF_DIMENSION_CELL_LENGTH: u32 = Self::DIMENSION_CELL_LENGTH / 2;
@@ -36,17 +38,18 @@ impl MetaitusZone {
             static_cells: HashMap::new(),
 
             entity_id_gen: IdGen::new(0),
-            static_id_gen: IdGen::new(1)
+            static_id_gen: IdGen::new(1),
+
+            cached_entity_data: Vec::new()
         }
     }
 
     pub fn tick(&mut self, tick_id: u64, delta_time: f32) {
 
-        // near_statics, repulsion_vector
-        let cached_entity_data = self.calculate_entity_data();
+        self.cache_entity_data();
 
         for (i, entity) in self.entities.values_mut().enumerate() {
-            let (near_statics, repulsion_vector) = &cached_entity_data[i];
+            let (near_statics, repulsion_vector) = &self.cached_entity_data[i];
             entity.add_force(*repulsion_vector, delta_time);
             let moved_xy = entity.tick(tick_id, delta_time, &near_statics);
             if moved_xy {
@@ -66,8 +69,8 @@ impl MetaitusZone {
         }
     }
 
-    fn calculate_entity_data(&self) -> Vec<(Vec<PhysicsCollider>, Vector2<f32>)> {
-        let mut cached_entity_data = Vec::new();
+    fn cache_entity_data(&mut self) {
+        self.cached_entity_data.clear();
 
         for entity in self.entities.values() {
             let cell_indicies = self.get_cell_and_surrounding_indicies(entity.pos);
@@ -93,10 +96,8 @@ impl MetaitusZone {
                     }
                 }
             }
-            cached_entity_data.push((near_statics, repulsion_vector));
+            self.cached_entity_data.push((near_statics, repulsion_vector));
         }
-
-        cached_entity_data
     }
 
     fn get_repulsion_force(entity: &MetaitusEntity, other: &MetaitusEntity) -> Vector2<f32> {
@@ -140,6 +141,9 @@ impl MetaitusZone {
     pub fn get_index_at_int_coords(coords: Vector2<u32>) -> u32 {
         (Self::DIMENSION_CELL_LENGTH * coords.y) + coords.x
     }
+    pub fn get_int_coords_at_index(index: u32) -> Vector2<u32> {
+        Vector2::new(index % Self::DIMENSION_CELL_LENGTH, index / Self::DIMENSION_CELL_LENGTH)
+    }
     pub fn get_int_coords_at_pos(pos: Vector2<f32>) -> Vector2<u32> {
         Vector2::new(Self::get_int_coord(pos.x), Self::get_int_coord(pos.y))
     }
@@ -169,26 +173,32 @@ impl MetaitusZone {
             self.cells.insert(cell_index, vec![id]);
         };
 
-        self.entities.insert(id, entity);
-        self.entities.get_mut(&id).unwrap()
-    }
-    pub fn despawn_entity(&mut self, id: u64) {
-        if let Some(entity) = self.entities.remove(&id) {
-            if let Some(cell) = self.cells.get_mut(&entity.current_cell_index) {
-                cell.retain(|&entity_id| entity_id != id);
+        match self.entities.entry(id) {
+            Entry::Occupied(_) => panic!("entity id already exists when spawning entity"),
+            Entry::Vacant(entry) => {
+                entry.insert(entity)
             }
         }
+    }
+    pub fn despawn_entity(&mut self, id: u64) -> Option<MetaitusEntity> {
+        if let Some(entity) = self.entities.remove(&id) {
+            if let Some(cell) = self.cells.get_mut(&entity.current_cell_index) {
+                let pos = cell.iter().position(|&entity_id| entity_id == entity.id).expect("entity id not found in cell when despawning");
+                cell.remove(pos);
+                if cell.len() == 0 {
+                    self.cells.remove(&entity.current_cell_index);
+                }
+            }
+            return Some(entity)
+        }
+        None
     }
 }
 
 impl MetaitusZone {
-    pub fn add_cell_static(&mut self, collider: PhysicsCollider) {
-        // assign static a static id if needed
-        let collider = if collider.is_static() {
-            collider
-        } else {
-            collider.copy_with_id(self.static_id_gen.get())
-        };
+    pub fn add_static(&mut self, collider: PhysicsCollider) -> u64 {
+        // keep id assignment private
+        let collider = collider.copy_with_id(self.static_id_gen.get());
 
         let min_int_coords = Self::get_int_coords_at_pos(collider.min);
         let max_int_coords = Self::get_int_coords_at_pos(collider.max);
@@ -201,25 +211,39 @@ impl MetaitusZone {
                 } else {
                     self.statics.insert(index, vec![collider]);
                 }
-
-                if let Some(cell_indicies) = self.static_cells.get_mut(&collider.id) {
-                    cell_indicies.push(index);
-                } else {
-                    self.static_cells.insert(collider.id, vec![index]);
-                }
             }
         }
+
+        match self.static_cells.entry(collider.id) {
+            Entry::Occupied(_) => panic!("static id already exists when adding a static"),
+            Entry::Vacant(entry) => {
+                let index = Self::get_index_at_int_coords(min_int_coords);
+                let x_length = max_int_coords.x - min_int_coords.x;
+                let y_length = max_int_coords.y - min_int_coords.y;
+                if x_length > u8::MAX as u32 || y_length > u8::MAX as u32 {
+                    panic!("static is too large when adding static");
+                }
+                let dimensions = Vector2::new(x_length as u8, y_length as u8);
+                entry.insert((index, dimensions));
+            }
+        }
+
+        collider.id
     }
-    pub fn remove_cell_static(&mut self, id: u64) {
-        // optimize if needed by removing the static_cells map
-        // and calculating the cell indicies on the fly
-        if let Some(cell_indicies) = self.static_cells.get_mut(&id) {
-            for index in cell_indicies {
-                if let Some(statics) = self.statics.get_mut(index) {
-                    statics.retain(|static_collider| static_collider.id != id);
+    pub fn remove_static(&mut self, id: u64) {
+        let static_cell = self.static_cells.remove(&id).expect("static id not found when removing static");
+        let int_coords = Self::get_int_coords_at_index(static_cell.0);
+        for y in int_coords.y..=int_coords.y + static_cell.1.y as u32 {
+            for x in int_coords.x..=int_coords.x + static_cell.1.x as u32 {
+                let index = Self::get_index_at_int_coords(Vector2::new(x, y));
+                if let Some(statics) = self.statics.get_mut(&index) {
+                    let pos = statics.iter().position(|&static_collider| static_collider.id == id).expect("static id not found in cell when removing static");
+                    statics.remove(pos);
+                    if statics.len() == 0 {
+                        self.statics.remove(&index);
+                    }
                 }
             }
-            self.static_cells.remove(&id);
         }
     }
 }
