@@ -4,7 +4,7 @@ use cgmath::{Vector2, Zero};
 
 use efficax_utils::id_gen::IdGen;
 
-use super::{physics::collider::PhysicsCollider, entity::MetaitusEntity};
+use super::{collider::MetaitusCollider, entity::MetaitusEntity};
 
 pub struct MetaitusZone {
     // entity_id, entity
@@ -12,7 +12,7 @@ pub struct MetaitusZone {
     // cell_index, entities
     cells: HashMap<u32, Vec<u64>>,
     // cell_index, statics
-    statics: HashMap<u32, Vec<PhysicsCollider>>,
+    statics: HashMap<u32, Vec<MetaitusCollider>>,
     // static_id, cell_indicies
     static_cells: HashMap<u64, (u32, Vector2<u8>)>,
 
@@ -20,7 +20,7 @@ pub struct MetaitusZone {
     static_id_gen: IdGen,
 
     // near_statics, repulsion_vector
-    cached_entity_data: Vec<(Vec<PhysicsCollider>, Vector2<f32>)>
+    cached_entity_data: Vec<(Vec<MetaitusCollider>, Vector2<f32>)>
 }
 
 impl MetaitusZone {
@@ -196,7 +196,7 @@ impl MetaitusZone {
 }
 
 impl MetaitusZone {
-    pub fn add_static(&mut self, collider: PhysicsCollider) -> u64 {
+    pub fn add_static(&mut self, collider: MetaitusCollider) -> u64 {
         // keep id assignment private
         let collider = collider.copy_with_id(self.static_id_gen.get());
 

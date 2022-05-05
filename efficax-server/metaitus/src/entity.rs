@@ -2,7 +2,7 @@ use cgmath::{Vector2, Zero};
 
 use crate::zone::MetaitusZone;
 
-use super::{physics::collider::PhysicsCollider};
+use super::collider::MetaitusCollider;
 
 #[derive(Debug)]
 pub struct MetaitusEntity {
@@ -10,23 +10,22 @@ pub struct MetaitusEntity {
     pub pos: Vector2<f32>,
     pub current_cell_index: u32,
 
-    has_bounds: bool,
-    bounds: PhysicsCollider,
+    pub has_bounds: bool,
+    pub bounds: MetaitusCollider,
 
-    has_vel_epsilon: bool,
-    vel_epsilon: f32,
+    pub has_vel_epsilon: bool,
+    pub vel_epsilon: f32,
 
-    has_collider: bool,
-    collider: PhysicsCollider,
+    pub has_collider: bool,
+    pub collider: MetaitusCollider,
 
     pub has_repulsion_radius: bool,
     pub repulsion_radius: f32,
     pub max_repulsion_mag: f32,
     pub repulsion: f32,
 
-    has_drag: bool,
-    has_linear_drag: bool,
-    drag: f32,
+    pub has_drag: bool,
+    pub drag: f32,
 
     pub vel: Vector2<f32>,
     pub moved_xy: bool,
@@ -42,16 +41,15 @@ impl MetaitusEntity {
             current_cell_index: MetaitusZone::get_index_at_pos(pos),
 
             has_bounds: false,
-            bounds: PhysicsCollider::all(),
+            bounds: MetaitusCollider::all(),
 
             has_vel_epsilon: true,
-            vel_epsilon: 1.0 / 12.0,
+            vel_epsilon: Self::VEL_EPSILON,
 
             has_collider: false,
-            collider: PhysicsCollider::none(),
+            collider: MetaitusCollider::none(),
 
             has_drag: false,
-            has_linear_drag: false,
             drag: 0.0,
 
             has_repulsion_radius: false,
@@ -66,7 +64,7 @@ impl MetaitusEntity {
         }
     }
 
-    pub fn with_bounds(&mut self, has_bounds: bool, bounds: PhysicsCollider) -> &mut Self {
+    pub fn with_bounds(&mut self, has_bounds: bool, bounds: MetaitusCollider) -> &mut Self {
         self.has_bounds = has_bounds;
         self.bounds = bounds;
         self
@@ -78,15 +76,14 @@ impl MetaitusEntity {
         self
     }
 
-    pub fn with_collider(&mut self, has_collider: bool, collider: PhysicsCollider) -> &mut Self {
+    pub fn with_collider(&mut self, has_collider: bool, collider: MetaitusCollider) -> &mut Self {
         self.has_collider = has_collider;
         self.collider = collider;
         self
     }
 
-    pub fn with_drag(&mut self, has_drag: bool, has_linear_drag: bool, drag: f32) -> &mut Self {
+    pub fn with_drag(&mut self, has_drag: bool, drag: f32) -> &mut Self {
         self.has_drag = has_drag;
-        self.has_linear_drag = has_linear_drag;
         self.drag = drag;
         self
     }
@@ -101,11 +98,13 @@ impl MetaitusEntity {
 }
 
 impl MetaitusEntity {
+    const VEL_EPSILON: f32 = 1.0 / 12.0;
+
     pub fn add_force(&mut self, force: Vector2<f32>, delta_time: f32) {
         self.vel += force * delta_time;
     }
 
-    pub fn tick(&mut self, tick_id: u64, delta_time: f32, near_statics: &Vec<PhysicsCollider>) -> bool {
+    pub fn tick(&mut self, tick_id: u64, delta_time: f32, near_statics: &Vec<MetaitusCollider>) -> bool {
         self.moved_xy = false;
         
         if self.has_vel_epsilon {
@@ -143,18 +142,16 @@ impl MetaitusEntity {
     }
 
     fn apply_drag(&mut self, timestep: f32) {
-        if self.has_linear_drag {
-            self.vel *= 1.0 - (self.drag * timestep);
-        }
-        else {
-            let x_drag = self.drag * ((self.vel.x * self.vel.x) / 2.0);
-            let y_drag = self.drag * ((self.vel.y * self.vel.y) / 2.0);
-            self.vel.x *= 1.0 - (x_drag * timestep);
-            self.vel.y *= 1.0 - (y_drag * timestep);
-        }
+        self.vel *= 1.0 - (self.drag * timestep);
+        /*
+        let x_drag = self.drag * ((self.vel.x * self.vel.x) / 2.0);
+        let y_drag = self.drag * ((self.vel.y * self.vel.y) / 2.0);
+        self.vel.x *= 1.0 - (x_drag * timestep);
+        self.vel.y *= 1.0 - (y_drag * timestep);
+        */
     }
 
-    fn update_pos(&mut self, timestep: f32, near_statics: &Vec<PhysicsCollider>) -> bool {
+    fn update_pos(&mut self, timestep: f32, near_statics: &Vec<MetaitusCollider>) -> bool {
         if !self.has_collider {
             self.pos = self.get_next_pos(timestep);
             //return (!self.vel.x.is_zero(), !self.vel.y.is_zero())
@@ -216,7 +213,7 @@ impl MetaitusEntity {
         self.pos + (self.vel * timestep)
     }
 
-    fn get_self_collider(&self, pos: Vector2<f32>) -> PhysicsCollider {
+    fn get_self_collider(&self, pos: Vector2<f32>) -> MetaitusCollider {
         self.collider.offset(pos)
     }
 

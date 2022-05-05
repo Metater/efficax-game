@@ -5,7 +5,7 @@ use std::{net::SocketAddr, collections::HashMap};
 use cgmath::{Vector2, Zero};
 use tokio::sync::mpsc::UnboundedSender;
 
-use metaitus::{zone::MetaitusZone, physics::collider::PhysicsCollider};
+use metaitus::{zone::MetaitusZone, collider::MetaitusCollider};
 
 use crate::network::{data::{entity_update::EntityUpdateData, NetworkData, tick_update::TickUpdateData, input::InputData}, NetworkSenderHandle, NetworkSenderMessage};
 
@@ -94,9 +94,9 @@ impl ServerState {
         let entity = self.zone.spawn_entity(Vector2::zero());
         
         entity
-        .with_bounds(true, PhysicsCollider::new(Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
-        .with_drag(true, true, 3.0)
-        .with_collider(true, PhysicsCollider::new(Vector2::new(-0.475, -0.475), Vector2::new(0.475, 0.475)))
+        .with_bounds(true, MetaitusCollider::new(Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
+        .with_drag(true, 3.0)
+        .with_collider(true, MetaitusCollider::new(Vector2::new(-0.475, -0.475), Vector2::new(0.475, 0.475)))
         .with_repulsion_radius(true, 0.4, 48.0, 3.0);
 
         self.clients.insert(addr, ClientState::new(entity.id));

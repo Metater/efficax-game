@@ -1,15 +1,15 @@
 use cgmath::{Vector2, Zero, Bounded};
 
 #[derive(Copy, Clone, Debug)]
-pub struct PhysicsCollider {
+pub struct MetaitusCollider {
     pub id: u64,
     pub min: Vector2<f32>,
     pub max: Vector2<f32>
 }
 
-impl PhysicsCollider {
+impl MetaitusCollider {
     pub fn new(min: Vector2<f32>, max: Vector2<f32>) -> Self {
-        PhysicsCollider {
+        MetaitusCollider {
             id: 0,
             min,
             max
@@ -17,7 +17,7 @@ impl PhysicsCollider {
     }
 
     pub fn new_with_id(id: u64, min: Vector2<f32>, max: Vector2<f32>) -> Self {
-        PhysicsCollider {
+        MetaitusCollider {
             id,
             min,
             max
@@ -48,7 +48,7 @@ impl PhysicsCollider {
         )
     }
 
-    pub fn intersects(&self, other: &PhysicsCollider) -> bool {
+    pub fn intersects(&self, other: &Self) -> bool {
         if self.max.x < other.min.x || self.min.x > other.max.x {
             return false
         }
