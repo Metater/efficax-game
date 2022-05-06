@@ -2,7 +2,7 @@ use tokio::io::{self, AsyncReadExt};
 
 use std::io::Cursor;
 
-#[derive(Debug)]
+#[derive(bincode::Encode, bincode::Decode, Debug)]
 pub struct InputData {
     pub input: u8,
     pub input_sequence: u8,

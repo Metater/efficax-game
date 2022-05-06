@@ -3,7 +3,7 @@ use std::io;
 
 use super::entity_update::EntityUpdateData;
 
-#[derive(Debug)]
+#[derive(bincode::Encode, bincode::Decode, Debug)]
 pub struct TickUpdateData {
     pub entity_updates: Vec<EntityUpdateData>,
 }

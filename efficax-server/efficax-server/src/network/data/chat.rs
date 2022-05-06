@@ -2,7 +2,7 @@ use tokio::io::{self, AsyncReadExt};
 
 use std::io::Cursor;
 
-#[derive(Debug)]
+#[derive(bincode::Encode, bincode::Decode, Debug)]
 pub struct ChatData {
     pub message: String
 }

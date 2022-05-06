@@ -12,3 +12,5 @@ rand = "0.8.3"
 tokio = { version = "1", features = ["full"] }
 ctrlc = "3.2.1"
 cgmath = "0.18.0"
+bincode = { version = "2.0.0-rc" }
+byteorder = "1.4.3"

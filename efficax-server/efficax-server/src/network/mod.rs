@@ -1,16 +1,16 @@
 pub mod packet;
 pub mod data;
 
-mod listener;
+mod receiver;
 mod sender;
 
 use std::net::SocketAddr;
 
-use tokio::{sync::mpsc::{self,UnboundedReceiver, UnboundedSender}, net::tcp::OwnedWriteHalf};
+use tokio::{sync::mpsc::{self, UnboundedReceiver, UnboundedSender}, net::tcp::OwnedWriteHalf};
 
 use self::{sender::NetworkSender, listener::NetworkListener, data::NetworkData, packet::NetworkPacket};
 
-pub enum NetworkListenerMessage {
+pub enum NetworkReceiverMessage {
     Join(SocketAddr),
     Leave(SocketAddr),
     Data(NetworkPacket)
@@ -46,8 +46,7 @@ impl NetworkSenderHandle {
     }
 
     pub fn send(&self, packet: NetworkPacket) {
-        // hides errors?
-        self.sender_tx.send(NetworkSenderMessage::Data(packet)).ok();
+        self.sender_tx.send(NetworkSenderMessage::Data(packet));
     }
 }
 
@@ -57,8 +56,8 @@ pub struct EfficaxNetwork {
 }
 
 impl EfficaxNetwork {
-    pub async fn start() -> (Self, UnboundedReceiver<NetworkListenerMessage>, UnboundedSender<NetworkSenderMessage>) {
-        let (listener_tx, listener_rx) = mpsc::unbounded_channel::<NetworkListenerMessage>();
+    pub async fn start() -> (Self, UnboundedReceiver<NetworkReceiverMessage>, UnboundedSender<NetworkSenderMessage>) {
+        let (listener_tx, listener_rx) = mpsc::unbounded_channel::<NetworkReceiverMessage>();
         let (mut sender_tx, sender_rx) = mpsc::unbounded_channel::<NetworkSenderMessage>();
 
         let listener = NetworkListener::start(listener_tx, &mut sender_tx).await;

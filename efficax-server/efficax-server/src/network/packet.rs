@@ -48,22 +48,23 @@ impl NetworkPacket {
                 if let Err(_) = data.write(&mut buf).await {
                     println!("[network sender]: error writing data: {:?} to buffer: {:#?} for client(s): {:?}", data, buf, self.addrs);
                 }
-                for &addr in &self.addrs {
-                    if let Some(writer) = clients.get_mut(&addr) {
-                        self.send_buf(writer, &buf, addr).await;
-                    }
-                    else {
-                        println!("[network sender]: tried to send data: {:?} to missing client: {}", self.data, addr);
-                    }
-                }
             }
             data => {
                 println!("[network sender]: tried to send unsupported data: {:?} to client(s): {:?}", data, self.addrs);  
             }
         };
+        // NOT CHECKING FOR ERRORS HERE
+        for &addr in &self.addrs {
+            if let Some(writer) = clients.get_mut(&addr) {
+                self.send_to(writer, &buf, addr).await;
+            }
+            else {
+                println!("[network sender]: tried to send data: {:?} to missing client: {}", self.data, addr);
+            }
+        }
     }
 
-    async fn send_buf(&self, writer: &mut OwnedWriteHalf, buf: &Vec<u8>, addr: SocketAddr) {
+    async fn send_to(&self, writer: &mut OwnedWriteHalf, buf: &Vec<u8>, addr: SocketAddr) {
         if let Err(_) = writer.writable().await {
             println!("[network sender]: error waiting for socket to become writable for client: {}", addr);
         }
@@ -74,7 +75,7 @@ impl NetworkPacket {
             Ok(n) => {
                 println!("[network sender]: sent {} bytes to client: {}", n, addr);
             }
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                 println!("[network sender]: would block while sending to client: {}", addr);
             }
             Err(e) => {

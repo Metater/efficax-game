@@ -4,10 +4,12 @@ use std::io;
 
 use efficax_utils::data;
 
-#[derive(Debug)]
+use super::loadables::Vector2f32Data;
+
+#[derive(bincode::Encode, bincode::Decode, Debug)]
 pub struct EntityUpdateData {
     pub id: u64,
-    pub pos: Vector2<f32>,
+    pub pos: Vector2f32Data,
     pub input_sequence: u8,
 }
 
