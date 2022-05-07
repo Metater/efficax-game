@@ -1,14 +1,11 @@
 use std::collections::HashMap;
-use std::io::{self, Cursor};
+use std::io;
 use std::{net::SocketAddr};
-
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use byteorder::{LittleEndian, ByteOrder};
+use tokio::io::{AsyncWriteExt};
 use tokio::net::tcp::OwnedWriteHalf;
 
 use super::data::NetworkData;
-
-use super::data::chat::ChatData;
-use super::data::input::InputData;
 
 #[derive(Debug)]
 pub struct NetworkPacket {
@@ -31,40 +28,30 @@ impl NetworkPacket {
         }
     }
 
-    pub async fn read(addr: SocketAddr, reader: &mut Cursor<&Vec<u8>>) -> io::Result<NetworkPacket> {
-        let packet_type = reader.read_u8().await?;
-        match packet_type {
-            InputData::ID => Ok(NetworkPacket::unicast(addr, NetworkData::Input(InputData::read(reader).await?))),
-            ChatData::ID =>  Ok(NetworkPacket::unicast(addr, NetworkData::Chat(ChatData::read(reader).await?))),
-            _ => Err(io::Error::new(io::ErrorKind::Other, format!("bad packet type: {}", packet_type)))
-        }
-    }
-
     pub async fn send(&self, clients: &mut HashMap<SocketAddr, OwnedWriteHalf>) {
-        let mut buf = Vec::new();
-        match &self.data {
-            // this block also contains general stuff?
-            NetworkData::TickUpdate(data) => {
-                if let Err(_) = data.write(&mut buf).await {
-                    println!("[network sender]: error writing data: {:?} to buffer: {:#?} for client(s): {:?}", data, buf, self.addrs);
+        let mut buf = [0; 4096];
+
+        let encode_result = bincode::encode_into_slice(&self.data, &mut buf[2..], bincode::config::legacy());
+
+        match encode_result {
+            Ok(len) => {
+                LittleEndian::write_u16(&mut buf[0..2], len as u16);
+                for &addr in &self.addrs {
+                    if let Some(writer) = clients.get_mut(&addr) {
+                        self.send_to(writer, &buf[..len + 2], addr).await;
+                    }
+                    else {
+                        println!("[network sender]: tried to send data: {:?} to missing client: {}", self.data, addr);
+                    }
                 }
             }
-            data => {
-                println!("[network sender]: tried to send unsupported data: {:?} to client(s): {:?}", data, self.addrs);  
-            }
-        };
-        // NOT CHECKING FOR ERRORS HERE
-        for &addr in &self.addrs {
-            if let Some(writer) = clients.get_mut(&addr) {
-                self.send_to(writer, &buf, addr).await;
-            }
-            else {
-                println!("[network sender]: tried to send data: {:?} to missing client: {}", self.data, addr);
+            Err(e) => {
+                println!("[network sender]: error: {} writing data: {:?} for client(s): {:?}", e, self.data, self.addrs);
             }
         }
     }
 
-    async fn send_to(&self, writer: &mut OwnedWriteHalf, buf: &Vec<u8>, addr: SocketAddr) {
+    async fn send_to(&self, writer: &mut OwnedWriteHalf, buf: &[u8], addr: SocketAddr) {
         if let Err(_) = writer.writable().await {
             println!("[network sender]: error waiting for socket to become writable for client: {}", addr);
         }

@@ -40,6 +40,7 @@ public class PacketManager : MonoBehaviour
 
     public void Handle(NetDataReader reader)
     {
+        reader.GetUInt(); // TODO TERRIBLE SOLUTION
         byte packetType = reader.GetByte();
         switch (packetType)
         {

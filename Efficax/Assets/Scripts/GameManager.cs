@@ -62,7 +62,7 @@ public class GameManager : MonoBehaviour
             if (lastSentInput != input)
             {
                 lastSentInput = input;
-                networkManager.SendAsync(new byte[] { 0, input, inputSequence++ });
+                networkManager.SendAsync(new byte[] { 6, 0, 0, 0, 0, 0, input, inputSequence++ });
             }
         }
         else

@@ -47,7 +47,7 @@ impl NetworkSenderHandle {
     }
 
     pub fn send(&self, packet: NetworkPacket) {
-        self.sender_tx.send(NetworkSenderMessage::Data(packet));
+        self.sender_tx.send(NetworkSenderMessage::Data(packet)).ok();
     }
 }
 

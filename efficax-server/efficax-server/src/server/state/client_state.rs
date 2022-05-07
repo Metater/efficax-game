@@ -4,7 +4,7 @@ use cgmath::{Vector2, Zero};
 
 use efficax_utils::scaling;
 
-use crate::network::data::input::InputData;
+use crate::network::data::InputData;
 
 pub struct ClientState {
     pub id: u64,

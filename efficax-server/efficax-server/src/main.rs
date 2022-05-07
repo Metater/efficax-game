@@ -17,7 +17,7 @@ async fn main() {
         if server.is_running() {
             println!("[server]: stopping");
             receiver_stop_notifier.notify_waiters();
-            sender_stop_notifier.send(network::NetworkSenderMessage::Stop);
+            sender_stop_notifier.send(network::NetworkSenderMessage::Stop).ok();
             server.stop();
         }
     }).expect("Error setting Ctrl-C handler");

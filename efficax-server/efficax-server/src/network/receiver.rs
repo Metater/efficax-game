@@ -3,6 +3,8 @@ use std::{net::{SocketAddr}, collections::VecDeque, sync::Arc};
 use byteorder::{LittleEndian, ByteOrder};
 use tokio::{io, task::JoinHandle, sync::{mpsc::UnboundedSender, Notify}, net::{TcpListener, tcp::OwnedReadHalf}, select};
 
+use crate::network::data::InputData;
+
 use super::{NetworkReceiverMessage, NetworkSenderMessage, data::NetworkData, packet::NetworkPacket};
 
 const BUF_SIZE: usize = 4096;
@@ -71,7 +73,7 @@ async fn start_accepting(listener: TcpListener, listener_tx: UnboundedSender<Net
 }
 
 async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, reader: OwnedReadHalf, addr: SocketAddr) -> io::Result<()> {
-    let mut ring_buf: VecDeque<u8> = VecDeque::with_capacity(RING_SIZE);
+    let mut ring_buf: VecDeque<u8> = VecDeque::new();
     loop {
         reader.readable().await?;
         let mut buf = [0u8; BUF_SIZE];
@@ -97,7 +99,7 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, reader: 
 
         if available_data >= 2 {
 
-            fn get_packet_size(&ring_buf: &VecDeque<u8>) -> u16 {
+            fn get_packet_size(ring_buf: &VecDeque<u8>) -> u16 {
                 LittleEndian::read_u16(&[*ring_buf.get(0).unwrap() as u8, *ring_buf.get(1).unwrap() as u8])
             }
 
@@ -112,8 +114,9 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, reader: 
                 }
 
                 let slice = ring_buf.make_contiguous();
-
-                let packet_slice = &slice[2..declared_packet_size as usize];
+                
+                let packet_slice = &slice[2..2 + declared_packet_size as usize];
+                
                 let result: Result<(NetworkData, usize), bincode::error::DecodeError> = bincode::decode_from_slice(packet_slice, bincode::config::legacy());
                 match result {
                     Ok((data, len)) => {
@@ -122,7 +125,7 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, reader: 
                         if let Err(_) = receiver_tx.send(message) {
                             return Ok(());
                         }
-                        ring_buf.drain(..len);
+                        ring_buf.drain(..len + 2);
                     }
                     Err(e) => {
                         return Err(io::Error::new(io::ErrorKind::Other, format!("unparsable packet: {}", e)));

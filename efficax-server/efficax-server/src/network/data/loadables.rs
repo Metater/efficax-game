@@ -2,8 +2,8 @@ use cgmath::Vector2;
 
 #[derive(bincode::Encode, bincode::Decode, Debug)]
 pub struct Vector2f32Data {
-    pub x: f32,
-    pub y: f32,
+    x: f32,
+    y: f32,
 }
 
 impl Vector2f32Data {
@@ -12,5 +12,9 @@ impl Vector2f32Data {
             x: vec.x,
             y: vec.y
         }
+    }
+
+    pub fn get(&self) -> Vector2<f32> {
+        Vector2::new(self.x, self.y)
     }
 }
