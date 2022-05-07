@@ -82,10 +82,12 @@ impl ServerState {
             }
         }
 
-        let addrs = self.clients.keys().copied().collect();
-        self.net.multicast(addrs, NetworkData::TickUpdate(TickUpdateData {
-            entity_updates
-        }));
+        let addrs: Vec<SocketAddr> = self.clients.keys().copied().collect();
+        if addrs.len() > 0 {
+            self.net.multicast(false, addrs, NetworkData::TickUpdate(TickUpdateData {
+                entity_updates
+            }));
+        }
     }
 }
 

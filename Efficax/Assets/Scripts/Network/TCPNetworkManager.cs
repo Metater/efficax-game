@@ -9,62 +9,46 @@ using System.Net.Sockets;
 using TcpClient = NetCoreServer.TcpClient;
 using Nito.Collections;
 
-public class NetworkManager : TcpClient
+public class TCPNetworkManager : TcpClient
 {
     private PacketManager packetManager;
 
     private Deque<byte> ringBuffer = new Deque<byte>();
     private NetDataReader reader = new NetDataReader();
 
-    private bool tryReconnect = true;
+    private bool stop = false;
 
-    public NetworkManager(PacketManager packetManager, string address, int port) : base(address, port)
+    public TCPNetworkManager(PacketManager packetManager, string address, int port) : base(address, port)
     {
         OptionNoDelay = true;
 
         this.packetManager = packetManager;
     }
 
-    public void Disconnect(bool tryReconnect)
+    public void DisconnectAndStop()
     {
-        this.tryReconnect = tryReconnect;
-        Disconnect();
+        stop = true;
+        DisconnectAsync();
+        while (IsConnected)
+            Thread.Yield();
     }
 
     protected override void OnConnected()
     {
         Debug.Log($"TCP client connected a new session with Id {Id}");
-
-        /*
-        for (int i = 0; i < 100; i++)
-        {
-            SendAsync(new byte[] { 0, 255 });
-        }
-        */
-        //SendAsync(new byte[] { 3 });
-
-        //bool s = SendAsync(new byte[] { 1, 48, 69, 20, 64, 61, 64 });
-        //Debug.Log("Sent data: " + s);
-
-        /*
-        byte[] b = Encoding.UTF8.GetBytes("Hello, world!");
-        byte[] buf = new byte[b.Length + 1];
-        buf[0] = 1;
-        b.CopyTo(buf, 1);
-        bool se = SendAsync(buf);
-        Debug.Log("Sent data: " + se);
-        */
     }
 
     protected override void OnDisconnected()
     {
         Debug.Log($"TCP client disconnected a session with Id {Id}");
 
-        if (!tryReconnect)
-            return;
-
         Thread.Sleep(1000);
-        ConnectAsync();
+
+        if (!stop)
+        {
+            Debug.Log("TCP client reconnecting...");
+            ConnectAsync();
+        }
     }
 
     protected override void OnReceived(byte[] buffer, long offset, long size)
@@ -90,7 +74,7 @@ public class NetworkManager : TcpClient
 
         while (reader.AvailableBytes > 0)
         {
-            packetManager.Handle(reader);
+            packetManager.HandleTCP(reader);
         }
     }
 

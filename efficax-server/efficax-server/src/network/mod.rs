@@ -10,12 +10,14 @@ use tokio::{sync::{mpsc::{self, UnboundedReceiver, UnboundedSender}, Notify}, ne
 
 use self::{data::NetworkData, packet::NetworkPacket};
 
+#[derive(Debug)]
 pub enum NetworkReceiverMessage {
     Join(SocketAddr),
     Leave(SocketAddr),
     Data(NetworkPacket)
 }
 
+#[derive(Debug)]
 pub enum NetworkSenderMessage {
     Join((SocketAddr, OwnedWriteHalf)),
     Leave(SocketAddr),
@@ -38,25 +40,25 @@ impl NetworkSenderHandle {
         Self::new(self.sender_tx.clone())
     }
 
-    pub fn _unicast(&self, addr: SocketAddr, data: NetworkData) {
-        self.send(NetworkPacket::unicast(addr, data));
+    pub fn _unicast(&self, is_tcp: bool, addr: SocketAddr, data: NetworkData) {
+        self.send(NetworkPacket::unicast(is_tcp, addr, data));
     }
 
-    pub fn multicast(&self, addrs: Vec<SocketAddr>, data: NetworkData) {
-        self.send(NetworkPacket::multicast(addrs, data));
+    pub fn multicast(&self, is_tcp: bool, addrs: Vec<SocketAddr>, data: NetworkData) {
+        self.send(NetworkPacket::multicast(is_tcp, addrs, data));
     }
 
-    pub fn send(&self, packet: NetworkPacket) {
-        self.sender_tx.send(NetworkSenderMessage::Data(packet)).ok();
+    fn send(&self, packet: NetworkPacket) {
+        self.sender_tx.send(NetworkSenderMessage::Data(packet)).expect("failed to send packet");
     }
 }
 
-pub async fn start() -> (UnboundedReceiver<NetworkReceiverMessage>, UnboundedSender<NetworkSenderMessage>, Arc<Notify>, JoinHandle<()>, JoinHandle<()>) {
+pub async fn start() -> (UnboundedReceiver<NetworkReceiverMessage>, UnboundedSender<NetworkSenderMessage>, Arc<Notify>, JoinHandle<()>, JoinHandle<()>, JoinHandle<()>) {
     let (receiver_tx, receiver_rx) = mpsc::unbounded_channel::<NetworkReceiverMessage>();
     let (sender_tx, sender_rx) = mpsc::unbounded_channel::<NetworkSenderMessage>();
 
-    let (receiver_stop_notifier, receiver_handle) = receiver::start(receiver_tx, sender_tx.clone()).await;
-    let sender_handle = sender::start(sender_rx).await;
+    let (udp_socket, receiver_stop_notifier, receiver_handle, udp_receiver_handle) = receiver::start(receiver_tx, sender_tx.clone()).await;
+    let sender_handle = sender::start(sender_rx, udp_socket).await;
 
-    (receiver_rx, sender_tx, receiver_stop_notifier, receiver_handle, sender_handle)
+    (receiver_rx, sender_tx, receiver_stop_notifier, receiver_handle, udp_receiver_handle, sender_handle)
 }

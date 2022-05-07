@@ -9,7 +9,8 @@ public class GameManager : MonoBehaviour
     public EntityManager entityManager;
     public PacketManager packetManager;
 
-    public NetworkManager networkManager;
+    public TCPNetworkManager tcp;
+    public UDPNetworkManager udp;
 
     private ulong ticks = 0;
 
@@ -24,15 +25,13 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        networkManager = new NetworkManager(packetManager, "127.0.0.1", 8080);
-        //networkManager = new NetworkManager(packetManager, "192.168.0.209", 8080);
         print("Client connecting...");
-        if (networkManager.ConnectAsync())
-        {
-            print("Connected!");
-        }
 
-        //test = TcpChatServer.Program.Test();
+        tcp = new TCPNetworkManager(packetManager, "127.0.0.1", 8080);
+        tcp.ConnectAsync();
+
+        udp = new UDPNetworkManager(packetManager, "127.0.0.1", 8080);
+        udp.Connect();
     }
 
     private void Update()
@@ -44,10 +43,9 @@ public class GameManager : MonoBehaviour
     {
         packetManager.ExecuteQueuedFixedUpdates();
 
-        if (!networkManager.IsConnected)
+        if (!tcp.IsConnected || !udp.IsConnected)
             return;
-        //networkManager.ReceiveAsync();
-        //test.Multicast(new byte[] { 2, 0, 0, 0, 0, 0, 0, 0, 0 });
+
         if (ticks % 2 == 0)
         {
             byte input = GetInput();
@@ -60,7 +58,8 @@ public class GameManager : MonoBehaviour
             if (lastSentInput != input)
             {
                 lastSentInput = input;
-                networkManager.SendAsync(new byte[] { 3, 0, 0, input, inputSequence++ });
+                udp.SendAsync(new byte[] { 0, input, inputSequence++ });
+                //tcp.SendAsync(new byte[] { 3, 0, 0, input, inputSequence++ });
             }
         }
         else
@@ -81,6 +80,7 @@ public class GameManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        networkManager.Disconnect(false);
+        tcp.DisconnectAndStop();
+        udp.DisconnectAndStop();
     }
 }

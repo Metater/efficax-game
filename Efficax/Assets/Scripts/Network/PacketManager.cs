@@ -38,7 +38,21 @@ public class PacketManager : MonoBehaviour
         ExecuteActions(fixedUpdateQueue);
     }
 
-    public void Handle(NetDataReader reader)
+    public void HandleTCP(NetDataReader reader)
+    {
+        byte packetType = reader.GetByte();
+        switch (packetType)
+        {
+            case 2:
+                HandleTickUpdate(reader);
+                break;
+            default:
+                print($"Unknown packet type: {packetType}");
+                break;
+        }
+    }
+
+    public void HandleUDP(NetDataReader reader)
     {
         byte packetType = reader.GetByte();
         switch (packetType)
