@@ -47,14 +47,11 @@ public class NetworkManager : TcpClient
     {
         Debug.Log($"TCP client disconnected a session with Id {Id}");
 
-        /*
         // Wait for a while...
         Thread.Sleep(1000);
 
         // Try to connect again
-        if (!_stop)
-            ConnectAsync();
-        */
+        ConnectAsync();
     }
 
     protected override void OnReceived(byte[] buffer, long offset, long size)

@@ -34,11 +34,11 @@ impl NetworkSenderHandle {
         }
     }
 
-    pub fn get_new_handle(&self) -> Self {
+    pub fn _get_new_handle(&self) -> Self {
         Self::new(self.sender_tx.clone())
     }
 
-    pub fn unicast(&self, addr: SocketAddr, data: NetworkData) {
+    pub fn _unicast(&self, addr: SocketAddr, data: NetworkData) {
         self.send(NetworkPacket::unicast(addr, data));
     }
 

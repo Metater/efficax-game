@@ -15,6 +15,7 @@ public class EntityUpdateData : IReadData<EntityUpdateData>
     {
         id = reader.GetULong();
         pos = DataUtils.ReadPos(reader);
+        //pos = new Vector2(reader.GetFloat(), reader.GetFloat());
         inputSequence = reader.GetByte();
         return this;
     }

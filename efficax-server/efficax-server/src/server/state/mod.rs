@@ -7,7 +7,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use metaitus::{zone::MetaitusZone, collider::MetaitusCollider};
 
-use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntityUpdateData, TickUpdateData, NetworkData, loadables::Vector2f32Data, InputData}};
+use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntityUpdateData, TickUpdateData, NetworkData, InputData, types::PositionData}};
 
 use self::client_state::ClientState;
 
@@ -74,7 +74,7 @@ impl ServerState {
                 if entity.last_moved_on_tick == self.tick_id {
                     let update = EntityUpdateData {
                         id: entity.id,
-                        pos: Vector2f32Data::new(entity.pos),
+                        pos: PositionData::new(entity.pos),
                         input_sequence: player.input_sequence,
                     };
                     entity_updates.push(update);

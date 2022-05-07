@@ -1,8 +1,9 @@
-pub mod loadables;
+use self::types::PositionData;
 
-use self::loadables::Vector2f32Data;
+pub mod types;
+pub mod impls;
 
-#[derive(bincode::Encode, bincode::Decode, Debug)]
+#[derive(Debug)]
 pub enum NetworkData {
     Input(InputData),
     Chat(ChatData),
@@ -23,7 +24,7 @@ pub struct ChatData {
 }
 
 // TickUpdate
-#[derive(bincode::Encode, bincode::Decode, Debug)]
+#[derive(Debug)]
 pub struct TickUpdateData {
     pub entity_updates: Vec<EntityUpdateData>,
 }
@@ -31,6 +32,6 @@ pub struct TickUpdateData {
 #[derive(bincode::Encode, bincode::Decode, Debug)]
 pub struct EntityUpdateData {
     pub id: u64,
-    pub pos: Vector2f32Data,
+    pub pos: PositionData,
     pub input_sequence: u8,
 }

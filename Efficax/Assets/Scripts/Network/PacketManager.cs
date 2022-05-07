@@ -40,11 +40,11 @@ public class PacketManager : MonoBehaviour
 
     public void Handle(NetDataReader reader)
     {
-        reader.GetUInt(); // TODO TERRIBLE SOLUTION
+        reader.GetUShort(); // TODO BAD SOLUTION
         byte packetType = reader.GetByte();
         switch (packetType)
         {
-            case 3:
+            case 2:
                 HandleTickUpdate(reader);
                 break;
             default:

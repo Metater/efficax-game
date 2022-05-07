@@ -42,9 +42,9 @@ impl ServerHandle {
     }
 }
 
-pub fn start(listener_rx: UnboundedReceiver<NetworkReceiverMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> (ServerHandle, JoinHandle<()>) {
+pub fn start(receiver_rx: UnboundedReceiver<NetworkReceiverMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> (ServerHandle, JoinHandle<()>) {
     let handle =  ServerHandle::new();
-    let mut server = EfficaxServer::new(&handle, listener_rx, sender_tx);
+    let mut server = EfficaxServer::new(&handle, receiver_rx, sender_tx);
 
     let server_task = task::spawn_blocking(move || {
         server.run();
@@ -56,7 +56,7 @@ pub fn start(listener_rx: UnboundedReceiver<NetworkReceiverMessage>, sender_tx: 
 pub struct EfficaxServer {
     handle: ServerHandle,
 
-    listener_rx: UnboundedReceiver<NetworkReceiverMessage>,
+    receiver_rx: UnboundedReceiver<NetworkReceiverMessage>,
 
     state: ServerState,
 
@@ -67,11 +67,11 @@ pub struct EfficaxServer {
 }
 
 impl EfficaxServer {
-    pub fn new(handle: &ServerHandle, listener_rx: UnboundedReceiver<NetworkReceiverMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> Self {
+    pub fn new(handle: &ServerHandle, receiver_rx: UnboundedReceiver<NetworkReceiverMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> Self {
         EfficaxServer {
             handle: handle.get_new_handle(),
 
-            listener_rx,
+            receiver_rx,
 
             state: ServerState::new(sender_tx),
 
@@ -91,7 +91,7 @@ impl EfficaxServer {
         while self.handle.is_running() {
             self.tick_start_time = Instant::now();
 
-            // break on listener channel disconnect
+            // break on receiver channel disconnect
             if self.recv_loop() {
                 break
             }
@@ -110,7 +110,7 @@ impl EfficaxServer {
 
     fn recv_loop(&mut self) -> bool {
         loop {
-            match self.listener_rx.try_recv() {
+            match self.receiver_rx.try_recv() {
                 Ok(message) => {
                     self.handle_message(message);
                 }
@@ -118,7 +118,7 @@ impl EfficaxServer {
                     return false;
                 }
                 Err(TryRecvError::Disconnected) => {
-                    println!("[server]: listener channel disconnected");
+                    println!("[server]: receiver channel disconnected");
                     return true;
                 }
             }
@@ -156,14 +156,11 @@ impl EfficaxServer {
     fn handle_data(&mut self, packet: NetworkPacket) {
         match packet.data {
             NetworkData::Input(ref data) => {
-                self.state.input_data(packet.addrs[0], data);
-                //println!("client {} sent input data: {}", packet.from, data.input);
+                self.state.input_data(packet.get_addr(), data);
             }
-            NetworkData::Chat(ref _data) => {
-                //println!("client {} sent chat data: {}", packet.from, data.message);
+            _ => {
+                println!("[server]: client: {} sent unhandleable packet: {:?}", packet.get_addr(), packet.data);
             }
-            _ => ()
         }
-        println!("[server]: client: {} sent packet: {:?}", packet.addrs[0], packet.data);
     }
 }

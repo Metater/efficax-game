@@ -28,6 +28,10 @@ impl NetworkPacket {
         }
     }
 
+    pub fn get_addr(&self) -> SocketAddr {
+        self.addrs[0]
+    }
+
     pub async fn send(&self, clients: &mut HashMap<SocketAddr, OwnedWriteHalf>) {
         let mut buf = [0; 4096];
 
@@ -35,7 +39,7 @@ impl NetworkPacket {
 
         match encode_result {
             Ok(len) => {
-                LittleEndian::write_u16(&mut buf[0..2], len as u16);
+                LittleEndian::write_u16(&mut buf[..2], len as u16);
                 for &addr in &self.addrs {
                     if let Some(writer) = clients.get_mut(&addr) {
                         self.send_to(writer, &buf[..len + 2], addr).await;
@@ -59,14 +63,14 @@ impl NetworkPacket {
             Ok(0) => {
                 println!("[network sender]: wrote zero bytes to client: {}", addr);
             }
-            Ok(n) => {
-                println!("[network sender]: sent {} bytes to client: {}", n, addr);
+            Ok(_n) => {
+                //println!("[network sender]: sent {} bytes to client: {}", n, addr);
             }
             Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                 println!("[network sender]: would block while sending to client: {}", addr);
             }
             Err(e) => {
-                println!("[network sender]: error: {} while writing to client: {}", e, addr);
+                println!("[network sender]: error: {} while writing data: {:?} to client: {}", e, self.data, addr);
             }
         };
     }
