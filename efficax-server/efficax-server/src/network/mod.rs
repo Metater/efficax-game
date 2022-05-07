@@ -4,11 +4,11 @@ pub mod data;
 mod receiver;
 mod sender;
 
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
-use tokio::{sync::mpsc::{self, UnboundedReceiver, UnboundedSender}, net::tcp::OwnedWriteHalf};
+use tokio::{sync::{mpsc::{self, UnboundedReceiver, UnboundedSender}, Notify}, net::tcp::OwnedWriteHalf, task::JoinHandle};
 
-use self::{sender::NetworkSender, listener::NetworkListener, data::NetworkData, packet::NetworkPacket};
+use self::{data::NetworkData, packet::NetworkPacket};
 
 pub enum NetworkReceiverMessage {
     Join(SocketAddr),
@@ -19,7 +19,8 @@ pub enum NetworkReceiverMessage {
 pub enum NetworkSenderMessage {
     Join((SocketAddr, OwnedWriteHalf)),
     Leave(SocketAddr),
-    Data(NetworkPacket)
+    Data(NetworkPacket),
+    Stop
 }
 
 pub struct NetworkSenderHandle {
@@ -50,29 +51,12 @@ impl NetworkSenderHandle {
     }
 }
 
-pub struct EfficaxNetwork {
-    listener: NetworkListener,
-    sender: NetworkSender
-}
+pub async fn start() -> (UnboundedReceiver<NetworkReceiverMessage>, UnboundedSender<NetworkSenderMessage>, Arc<Notify>, JoinHandle<()>, JoinHandle<()>) {
+    let (receiver_tx, receiver_rx) = mpsc::unbounded_channel::<NetworkReceiverMessage>();
+    let (sender_tx, sender_rx) = mpsc::unbounded_channel::<NetworkSenderMessage>();
 
-impl EfficaxNetwork {
-    pub async fn start() -> (Self, UnboundedReceiver<NetworkReceiverMessage>, UnboundedSender<NetworkSenderMessage>) {
-        let (listener_tx, listener_rx) = mpsc::unbounded_channel::<NetworkReceiverMessage>();
-        let (mut sender_tx, sender_rx) = mpsc::unbounded_channel::<NetworkSenderMessage>();
+    let (receiver_stop_notifier, receiver_handle) = receiver::start(receiver_tx, sender_tx.clone()).await;
+    let sender_handle = sender::start(sender_rx).await;
 
-        let listener = NetworkListener::start(listener_tx, &mut sender_tx).await;
-        let sender = NetworkSender::start(sender_rx).await;
-        
-        let network = EfficaxNetwork {
-            listener,
-            sender
-        };
-
-        (network, listener_rx, sender_tx)
-    }
-
-    pub fn stop(&self) {
-        self.listener.stop();
-        self.sender.stop();
-    }
+    (receiver_rx, sender_tx, receiver_stop_notifier, receiver_handle, sender_handle)
 }

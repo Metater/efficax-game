@@ -10,7 +10,7 @@ use tokio::task::{self, JoinHandle};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::time::{Instant, Duration};
 
-use crate::network::{NetworkListenerMessage, NetworkSenderMessage};
+use crate::network::{NetworkReceiverMessage, NetworkSenderMessage};
 use crate::network::data::NetworkData;
 use crate::network::packet::NetworkPacket;
 
@@ -42,7 +42,7 @@ impl ServerHandle {
     }
 }
 
-pub fn start(listener_rx: UnboundedReceiver<NetworkListenerMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> (ServerHandle, JoinHandle<()>) {
+pub fn start(listener_rx: UnboundedReceiver<NetworkReceiverMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> (ServerHandle, JoinHandle<()>) {
     let handle =  ServerHandle::new();
     let mut server = EfficaxServer::new(&handle, listener_rx, sender_tx);
 
@@ -56,7 +56,7 @@ pub fn start(listener_rx: UnboundedReceiver<NetworkListenerMessage>, sender_tx: 
 pub struct EfficaxServer {
     handle: ServerHandle,
 
-    listener_rx: UnboundedReceiver<NetworkListenerMessage>,
+    listener_rx: UnboundedReceiver<NetworkReceiverMessage>,
 
     state: ServerState,
 
@@ -67,7 +67,7 @@ pub struct EfficaxServer {
 }
 
 impl EfficaxServer {
-    pub fn new(handle: &ServerHandle, listener_rx: UnboundedReceiver<NetworkListenerMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> Self {
+    pub fn new(handle: &ServerHandle, listener_rx: UnboundedReceiver<NetworkReceiverMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> Self {
         EfficaxServer {
             handle: handle.get_new_handle(),
 
@@ -135,11 +135,11 @@ impl EfficaxServer {
 }
 
 impl EfficaxServer {
-    pub fn handle_message(&mut self, message: NetworkListenerMessage) {
+    pub fn handle_message(&mut self, message: NetworkReceiverMessage) {
         match message {
-            NetworkListenerMessage::Join(addr) => self.handle_join(addr),
-            NetworkListenerMessage::Leave(addr) => self.handle_leave(addr),
-            NetworkListenerMessage::Data(packet) => self.handle_data(packet),
+            NetworkReceiverMessage::Join(addr) => self.handle_join(addr),
+            NetworkReceiverMessage::Leave(addr) => self.handle_leave(addr),
+            NetworkReceiverMessage::Data(packet) => self.handle_data(packet),
         }
     }
     
