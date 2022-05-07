@@ -17,8 +17,6 @@ public class GameManager : MonoBehaviour
     private byte lastSentInput = 255;
     private byte inputSequence = 0;
 
-    //private TcpChatServer.ChatServer test;
-
     private void Awake()
     {
 
@@ -83,6 +81,6 @@ public class GameManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        networkManager.Disconnect();
+        networkManager.Disconnect(false);
     }
 }

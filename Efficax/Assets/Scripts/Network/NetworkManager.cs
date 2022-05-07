@@ -7,15 +7,28 @@ using System;
 using System.Text;
 using System.Net.Sockets;
 using TcpClient = NetCoreServer.TcpClient;
+using Nito.Collections;
 
 public class NetworkManager : TcpClient
 {
     private PacketManager packetManager;
 
+    private Deque<byte> ringBuffer = new Deque<byte>();
+    private NetDataReader reader = new NetDataReader();
+
+    private bool tryReconnect = true;
+
     public NetworkManager(PacketManager packetManager, string address, int port) : base(address, port)
     {
         OptionNoDelay = true;
+
         this.packetManager = packetManager;
+    }
+
+    public void Disconnect(bool tryReconnect)
+    {
+        this.tryReconnect = tryReconnect;
+        Disconnect();
     }
 
     protected override void OnConnected()
@@ -47,17 +60,34 @@ public class NetworkManager : TcpClient
     {
         Debug.Log($"TCP client disconnected a session with Id {Id}");
 
-        // Wait for a while...
-        Thread.Sleep(1000);
+        if (!tryReconnect)
+            return;
 
-        // Try to connect again
+        Thread.Sleep(1000);
         ConnectAsync();
     }
 
     protected override void OnReceived(byte[] buffer, long offset, long size)
     {
-        //Debug.Log(Encoding.UTF8.GetString(buffer, (int)offset, (int)size));
-        NetDataReader reader = new NetDataReader(buffer, (int)offset, (int)size);
+        byte[] data = new byte[size];
+        Array.Copy(buffer, offset, data, 0, size);
+        ringBuffer.InsertRange(ringBuffer.Count, data);
+
+        if (ringBuffer.Count >= 2)
+        {
+            int dataRead = 0;
+            byte[] ringBufferData = ringBuffer.ToArray();
+
+            while (ringBuffer.Count >= 2)
+            {
+                ushort packetSize = BitConverter.ToUInt16(new byte[] { ringBuffer.RemoveFromFront(), ringBuffer.RemoveFromFront() });
+                dataRead += 2;
+                reader.SetSource(ringBufferData, dataRead, packetSize);
+                ringBuffer.RemoveRange(0, packetSize);
+                dataRead += packetSize;
+            }
+        }
+
         while (reader.AvailableBytes > 0)
         {
             packetManager.Handle(reader);
