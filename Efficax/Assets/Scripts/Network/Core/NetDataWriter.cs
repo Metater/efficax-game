@@ -3,6 +3,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 
+// https://github.com/RevenantX/LiteNetLib
 public class NetDataWriter
 {
     protected byte[] _data;

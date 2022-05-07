@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Text;
 
+// https://github.com/chronoxor/NetCoreServer
 namespace NetCoreServer
 {
     /// <summary>

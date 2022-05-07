@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
+// https://github.com/chronoxor/NetCoreServer
 namespace NetCoreServer
 {
     /// <summary>

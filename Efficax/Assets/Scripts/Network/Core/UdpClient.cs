@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
+// https://github.com/chronoxor/NetCoreServer
 namespace NetCoreServer
 {
     /// <summary>

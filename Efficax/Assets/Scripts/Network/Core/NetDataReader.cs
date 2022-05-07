@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text;
 
+// https://github.com/RevenantX/LiteNetLib
 public class NetDataReader
 {
     protected byte[] _data;

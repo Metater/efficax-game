@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+// https://github.com/RevenantX/LiteNetLib
 public static class FastBitConverter
 {
     [StructLayout(LayoutKind.Explicit)]
