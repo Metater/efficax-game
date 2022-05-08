@@ -4,20 +4,40 @@ create joined packet that notifies client which entity is its player
 
 despawn entity packet
 
-auto reconnect?
-
 put constants in central place,
 player config?
 player move force mag
 
-refactor using bincode, turn of var ints
-
-packet.rs needs to be standardized
-
-packet.rs send, tick update block contains general code that needs to be separated
-
 make a grouped packet
 
-enum for unicast or multicast packet, making a vec for everything may be wasteful?????????
 
-send_buf wierd name
+only apply input if seq number is larger, allow wrap around on server
+
+udp data to send priority accumulator?
+
+client improve sending code
+
+expect when a send or listener send fails in listener.rs  expect when using any other channels  look into udp with tokio
+
+client interest management
+
+compartmentalize state->network, network->state, and state update code
+
+a way to kick clients
+
+udp with input packet ttl?
+
+
+
+
+508 udp limit
+
+<=1 thread per world/zone
+
+    // error handling when sending
+    // print message inconsistency
+
+    // maybe just dont care about clean shutdowns, it takes way too much stuff?
+    // it may be possible for notify to not work?
+
+keep abort to shut down receiver and sender, it doesnt matter if it does something a tiny bit wierd, when it is already closing, dont make it more complicated??????

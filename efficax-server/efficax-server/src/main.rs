@@ -9,12 +9,6 @@ use std::io::{stdin, stdout, Read, Write};
 async fn main() {
     println!("[server]: Hello, world!!");
 
-    // maybe just dont care about clean shutdowns, it takes way too much stuff?
-    // it may be possible for notify to not work?
-
-    // error handling when sending
-    // print message inconsistency
-
     let (receiver_rx, sender_tx, receiver_stop_notifier, receiver_handle, udp_receiver_handle, sender_handle) = network::start().await;
     let sender_stop_notifier = sender_tx.clone();
     let (server, server_task) = server::start(receiver_rx, sender_tx);

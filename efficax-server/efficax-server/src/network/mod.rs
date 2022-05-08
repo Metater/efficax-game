@@ -11,6 +11,23 @@ use tokio::{sync::{mpsc::{self, UnboundedReceiver, UnboundedSender}, Notify}, ne
 use self::{data::NetworkData, packet::NetworkPacket};
 
 #[derive(Debug)]
+pub struct NetworkClient {
+    addr: SocketAddr,
+    writer: OwnedWriteHalf,
+    udp_port: u16
+}
+
+impl NetworkClient {
+    pub fn new(addr: SocketAddr, writer: OwnedWriteHalf) -> Self {
+        Self {
+            addr,
+            writer,
+            udp_port: 0
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum NetworkReceiverMessage {
     Join(SocketAddr),
     Leave(SocketAddr),
@@ -19,8 +36,9 @@ pub enum NetworkReceiverMessage {
 
 #[derive(Debug)]
 pub enum NetworkSenderMessage {
-    Join((SocketAddr, OwnedWriteHalf)),
+    Join(NetworkClient),
     Leave(SocketAddr),
+    SetUDPPort((SocketAddr, u16)),
     Data(NetworkPacket),
     Stop
 }

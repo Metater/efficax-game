@@ -31,9 +31,7 @@ public class UDPNetworkManager : UdpClient
     protected override void OnConnected()
     {
         Debug.Log($"UDP client connected a new session with Id {Id}");
-
         ReceiveAsync();
-        Debug.Log("e");
     }
 
     protected override void OnDisconnected()
@@ -52,14 +50,13 @@ public class UDPNetworkManager : UdpClient
     protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
     {
         // Could be problem: trusting data from any endpoint?
-
-        Debug.Log("got data: " + size);
+        Debug.Log("udp");
 
         reader.SetSource(buffer, (int)offset, (int)size);
 
         while (reader.AvailableBytes > 0)
         {
-            packetManager.HandleUDP(reader);
+            packetManager.Handle(reader);
         }
 
         ReceiveAsync();

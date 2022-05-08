@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -15,8 +16,10 @@ public class GameManager : MonoBehaviour
     private ulong ticks = 0;
 
     private byte offInput = 0;
-    private byte lastSentInput = 255;
+    //private byte lastSentInput = 255;
     private byte inputSequence = 0;
+
+    private bool sentUDPPort = false;
 
     private void Awake()
     {
@@ -46,6 +49,13 @@ public class GameManager : MonoBehaviour
         if (!tcp.IsConnected || !udp.IsConnected)
             return;
 
+        if (!sentUDPPort)
+        {
+            sentUDPPort = true;
+            ushort port = (ushort)(udp.Socket.LocalEndPoint as IPEndPoint).Port;
+            tcp.SendAsync(new byte[] { 3, 0, 3, (byte)port, (byte)(port >> 8) });
+        }
+
         if (ticks % 2 == 0)
         {
             byte input = GetInput();
@@ -55,11 +65,11 @@ public class GameManager : MonoBehaviour
                 input = offInput;
             }
 
-            if (lastSentInput != input)
+            //if (lastSentInput != input)
             {
-                lastSentInput = input;
-                udp.SendAsync(new byte[] { 0, input, inputSequence++ });
-                //tcp.SendAsync(new byte[] { 3, 0, 0, input, inputSequence++ });
+                //lastSentInput = input;
+                //udp.SendAsync(new byte[] { 0, input, inputSequence++ });
+                tcp.SendAsync(new byte[] { 3, 0, 0, input, inputSequence++ });
             }
         }
         else

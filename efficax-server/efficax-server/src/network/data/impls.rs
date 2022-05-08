@@ -16,6 +16,10 @@ impl bincode::Encode for NetworkData {
                 <u8 as bincode::Encode>::encode(&2u8, encoder)?;
                 data.encode(encoder)?;
             }
+            NetworkData::SetUDPPort(data) => {
+                <u8 as bincode::Encode>::encode(&3u8, encoder)?;
+                data.encode(encoder)?;
+            }
         }
         Ok(())
     }
@@ -27,10 +31,11 @@ impl bincode::Decode for NetworkData {
             0 => Ok(NetworkData::Input(<InputData as bincode::Decode>::decode(decoder)?)),
             1 => Ok(NetworkData::Chat(<ChatData as bincode::Decode>::decode(decoder)?)),
             2 => Ok(NetworkData::TickUpdate(<TickUpdateData as bincode::Decode>::decode(decoder)?)),
+            3 => Ok(NetworkData::SetUDPPort(<u16 as bincode::Decode>::decode(decoder)?)),
             variant => Err(bincode::error::DecodeError::UnexpectedVariant {
                 found: variant as u32,
                 type_name: "NetworkData",
-                allowed: bincode::error::AllowedEnumVariants::Range { min: 0, max: 2 }
+                allowed: bincode::error::AllowedEnumVariants::Range { min: 0, max: 3 }
             })
         }
     }

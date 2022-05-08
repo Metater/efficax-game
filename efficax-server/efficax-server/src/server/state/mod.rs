@@ -71,19 +71,19 @@ impl ServerState {
 
         for player in self.clients.values() {
             if let Some(entity) = self.zone.entities.get(&player.id) {
-                if entity.last_moved_on_tick == self.tick_id {
-                    let update = EntityUpdateData {
-                        id: entity.id,
-                        pos: PositionData::new(entity.pos),
-                        input_sequence: player.input_sequence,
-                    };
-                    entity_updates.push(update);
-                }
+                //if entity.last_moved_on_tick == self.tick_id || entity.last_moved_on_tick == 0 {
+                let update = EntityUpdateData {
+                    id: entity.id,
+                    pos: PositionData::new(entity.pos),
+                    input_sequence: player.input_sequence,
+                };
+                entity_updates.push(update);
+                //}
             }
         }
 
         let addrs: Vec<SocketAddr> = self.clients.keys().copied().collect();
-        if addrs.len() > 0 {
+        if addrs.len() > 0 { // if there are clients, REMOVE IF OTHER STUFF
             self.net.multicast(false, addrs, NetworkData::TickUpdate(TickUpdateData {
                 entity_updates
             }));

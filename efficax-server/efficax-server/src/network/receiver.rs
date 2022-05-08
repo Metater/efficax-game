@@ -3,6 +3,8 @@ use std::{net::{SocketAddr}, collections::VecDeque, sync::Arc};
 use byteorder::{LittleEndian, ByteOrder};
 use tokio::{io, task::JoinHandle, sync::{mpsc::UnboundedSender, Notify}, net::{TcpListener, tcp::OwnedReadHalf, UdpSocket}, select};
 
+use crate::network::NetworkClient;
+
 use super::{NetworkReceiverMessage, NetworkSenderMessage, data::NetworkData, packet::NetworkPacket};
 
 const BUF_SIZE: usize = 4096;
@@ -34,8 +36,7 @@ pub async fn start(receiver_tx: UnboundedSender<NetworkReceiverMessage>, sender_
                 recv_result = receiver_udp_socket.recv_from(&mut buf) => {
                     match recv_result {
                         Ok((len, addr)) => {
-                            let packet_slice = &buf[0..len];
-                            println!("{:?}", packet_slice);
+                            let packet_slice = &buf[..len];
                             let result: Result<(NetworkData, usize), bincode::error::DecodeError> = bincode::decode_from_slice(packet_slice, bincode::config::legacy());
                             match result {
                                 Ok((data, _)) => {
@@ -87,14 +88,14 @@ async fn start_accepting(listener: TcpListener, receiver_tx: UnboundedSender<Net
                     break;
                 }
     
-                let sender_channel = sender_tx.clone();
-                if sender_channel.send(NetworkSenderMessage::Join((addr, writer))).is_err() {
+                let mut sender_channel = sender_tx.clone();
+                if sender_channel.send(NetworkSenderMessage::Join(NetworkClient::new(addr, writer))).is_err() {
                     break;
                 }
 
                 let receiver_stop_notifier = stop_notifier.clone();
                 tokio::spawn(async move {
-                    if let Err(e) = receive(&receiver_channel, reader, addr, receiver_stop_notifier).await {
+                    if let Err(e) = receive(&receiver_channel, &mut sender_channel, reader, addr, receiver_stop_notifier).await {
                         println!("[network receiver]: error: {} client: {}", e, addr);
                     }
     
@@ -109,7 +110,7 @@ async fn start_accepting(listener: TcpListener, receiver_tx: UnboundedSender<Net
     }
 }
 
-async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, reader: OwnedReadHalf, addr: SocketAddr, stop_notifier: Arc<Notify>) -> io::Result<()> {
+async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, sender_tx: &mut UnboundedSender<NetworkSenderMessage>, reader: OwnedReadHalf, addr: SocketAddr, stop_notifier: Arc<Notify>) -> io::Result<()> {
     let mut ring_buf: VecDeque<u8> = VecDeque::new();
     loop {
         select! {
@@ -154,14 +155,22 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, reader: 
                         let slice = ring_buf.make_contiguous();
                         
                         let packet_slice = &slice[2..(declared_packet_size as usize) + 2];
-                        
                         let result: Result<(NetworkData, usize), bincode::error::DecodeError> = bincode::decode_from_slice(packet_slice, bincode::config::legacy());
                         match result {
                             Ok((data, len)) => {
-                                let packet = NetworkPacket::unicast(true, addr, data);
-                                let message = NetworkReceiverMessage::Data(packet);
-                                if receiver_tx.send(message).is_err() {
-                                    return Ok(());
+                                match data {
+                                    NetworkData::SetUDPPort(udp_port) => {
+                                        if sender_tx.send(NetworkSenderMessage::SetUDPPort((addr, udp_port))).is_err() {
+                                            return Ok(())
+                                        }
+                                    },
+                                    other => {
+                                        let packet = NetworkPacket::unicast(true, addr, other);
+                                        let message = NetworkReceiverMessage::Data(packet);
+                                        if receiver_tx.send(message).is_err() {
+                                            return Ok(());
+                                        }
+                                    }
                                 }
                                 ring_buf.drain(..len + 2);
                             }

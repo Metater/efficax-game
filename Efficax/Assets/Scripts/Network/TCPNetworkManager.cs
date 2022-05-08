@@ -8,6 +8,7 @@ using System.Text;
 using System.Net.Sockets;
 using TcpClient = NetCoreServer.TcpClient;
 using Nito.Collections;
+using System.Net;
 
 public class TCPNetworkManager : TcpClient
 {
@@ -53,6 +54,8 @@ public class TCPNetworkManager : TcpClient
 
     protected override void OnReceived(byte[] buffer, long offset, long size)
     {
+        Debug.Log("tcp");
+
         byte[] data = new byte[size];
         Array.Copy(buffer, offset, data, 0, size);
         ringBuffer.InsertRange(ringBuffer.Count, data);
@@ -66,15 +69,14 @@ public class TCPNetworkManager : TcpClient
             {
                 ushort packetSize = BitConverter.ToUInt16(new byte[] { ringBuffer.RemoveFromFront(), ringBuffer.RemoveFromFront() });
                 dataRead += 2;
-                reader.SetSource(ringBufferData, dataRead, packetSize);
+                reader.SetSource(ringBufferData, dataRead, dataRead + packetSize);
+                while (reader.AvailableBytes > 0)
+                {
+                    packetManager.Handle(reader);
+                }
                 ringBuffer.RemoveRange(0, packetSize);
                 dataRead += packetSize;
             }
-        }
-
-        while (reader.AvailableBytes > 0)
-        {
-            packetManager.HandleTCP(reader);
         }
     }
 

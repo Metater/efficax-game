@@ -7,7 +7,8 @@ pub mod impls;
 pub enum NetworkData {
     Input(InputData),
     Chat(ChatData),
-    TickUpdate(TickUpdateData)
+    TickUpdate(TickUpdateData),
+    SetUDPPort(u16)
 }
 
 // Input
