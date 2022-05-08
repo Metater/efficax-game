@@ -38,7 +38,7 @@ pub enum NetworkReceiverMessage {
 pub enum NetworkSenderMessage {
     Join(NetworkClient),
     Leave(SocketAddr),
-    SetUDPPort((SocketAddr, u16)),
+    InitUDP((SocketAddr, u16)),
     Data(NetworkPacket),
     Stop
 }

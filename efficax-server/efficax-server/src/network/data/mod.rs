@@ -8,7 +8,7 @@ pub enum NetworkData {
     Input(InputData),
     Chat(ChatData),
     TickUpdate(TickUpdateData),
-    SetUDPPort(u16)
+    InitUDP(u16)
 }
 
 // Input

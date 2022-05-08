@@ -159,8 +159,8 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, sender_t
                         match result {
                             Ok((data, len)) => {
                                 match data {
-                                    NetworkData::SetUDPPort(udp_port) => {
-                                        if sender_tx.send(NetworkSenderMessage::SetUDPPort((addr, udp_port))).is_err() {
+                                    NetworkData::InitUDP(udp_port) => {
+                                        if sender_tx.send(NetworkSenderMessage::InitUDP((addr, udp_port))).is_err() {
                                             return Ok(())
                                         }
                                     },
