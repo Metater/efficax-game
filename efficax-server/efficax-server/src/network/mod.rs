@@ -31,6 +31,7 @@ impl NetworkClient {
 pub enum NetworkReceiverMessage {
     Join(SocketAddr),
     Leave(SocketAddr),
+    InitUDP((SocketAddr, u16)),
     Data(NetworkPacket)
 }
 

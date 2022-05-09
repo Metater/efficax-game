@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
     public TCPNetworkManager tcp;
     public UDPNetworkManager udp;
 
-    private ulong ticks = 0;
+    public ulong ClientTick { get; private set; } = 0;
 
     private byte offInput = 0;
     //private byte lastSentInput = 255;
@@ -56,7 +56,7 @@ public class GameManager : MonoBehaviour
             tcp.SendAsync(new byte[] { 3, 0, 3, (byte)port, (byte)(port >> 8) });
         }
 
-        if (ticks % 2 == 0)
+        if (ClientTick % 2 == 0)
         {
             byte input = GetInput();
 
@@ -65,18 +65,13 @@ public class GameManager : MonoBehaviour
                 input = offInput;
             }
 
-            //if (lastSentInput != input)
-            {
-                //lastSentInput = input;
-                //udp.SendAsync(new byte[] { 0, input, inputSequence++ });
-                tcp.SendAsync(new byte[] { 3, 0, 0, input, inputSequence++ });
-            }
+            udp.SendAsync(new byte[] { 0, input, inputSequence++ });
         }
         else
         {
             offInput = GetInput();
         }
-        ticks++;
+        ClientTick++;
     }
 
     private byte GetInput()

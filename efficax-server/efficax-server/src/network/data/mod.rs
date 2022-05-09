@@ -8,7 +8,9 @@ pub enum NetworkData {
     Input(InputData),
     Chat(ChatData),
     TickUpdate(TickUpdateData),
-    InitUDP(u16)
+    InitUDP(u16),
+    //Join(JoinData),
+    //Leave(LeaveData),
 }
 
 // Input
@@ -27,6 +29,7 @@ pub struct ChatData {
 // TickUpdate
 #[derive(Debug)]
 pub struct TickUpdateData {
+    pub tick_id: u8,
     pub entity_updates: Vec<EntityUpdateData>,
 }
 
@@ -36,3 +39,15 @@ pub struct EntityUpdateData {
     pub pos: PositionData,
     pub input_sequence: u8,
 }
+
+/*
+#[derive(bincode::Encode, bincode::Decode, Debug)]
+pub struct JoinData {
+
+}
+
+#[derive(bincode::Encode, bincode::Decode, Debug)]
+pub struct LeaveData {
+
+}
+ */

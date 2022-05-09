@@ -54,8 +54,6 @@ public class TCPNetworkManager : TcpClient
 
     protected override void OnReceived(byte[] buffer, long offset, long size)
     {
-        Debug.Log("tcp");
-
         byte[] data = new byte[size];
         Array.Copy(buffer, offset, data, 0, size);
         ringBuffer.InsertRange(ringBuffer.Count, data);
@@ -72,7 +70,7 @@ public class TCPNetworkManager : TcpClient
                 reader.SetSource(ringBufferData, dataRead, dataRead + packetSize);
                 while (reader.AvailableBytes > 0)
                 {
-                    packetManager.Handle(reader);
+                    packetManager.Handle(reader, true);
                 }
                 ringBuffer.RemoveRange(0, packetSize);
                 dataRead += packetSize;

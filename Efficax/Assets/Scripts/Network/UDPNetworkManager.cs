@@ -49,14 +49,11 @@ public class UDPNetworkManager : UdpClient
 
     protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
     {
-        // Could be problem: trusting data from any endpoint?
-        Debug.Log("udp");
-
         reader.SetSource(buffer, (int)offset, (int)size);
 
         while (reader.AvailableBytes > 0)
         {
-            packetManager.Handle(reader);
+            packetManager.Handle(reader, false);
         }
 
         ReceiveAsync();

@@ -19,18 +19,19 @@ public class EntityManager : MonoBehaviour
         entities = new Dictionary<ulong, Entity>();
     }
 
-    public void UpdateEntity(EntityUpdateData data)
+    public void UpdateEntity(EntityUpdateData data, byte tickId)
     {
         Entity entity;
         if (!entities.ContainsKey(data.id))
         {
             entity = Instantiate(entityPrefab, data.pos, Quaternion.identity, entitiesParent).GetComponent<Entity>();
             entities.Add(data.id, entity);
+            entity.Init(gameManager);
         }
         else
         {
             entity = entities[data.id];
         }
-        entity.UpdateEnity(data);
+        entity.UpdateEnity(data, tickId);
     }
 }

@@ -85,6 +85,7 @@ impl ServerState {
         let addrs: Vec<SocketAddr> = self.clients.keys().copied().collect();
         if addrs.len() > 0 { // if there are clients, REMOVE IF OTHER STUFF
             self.net.multicast(false, addrs, NetworkData::TickUpdate(TickUpdateData {
+                tick_id: (self.tick_id % 256) as u8,
                 entity_updates
             }));
         }
@@ -110,6 +111,7 @@ impl ServerState {
     }
 
     pub fn input_data(&mut self, addr: SocketAddr, data: &InputData) {
+        println!("got input data: {:?} from: {}", data, addr);
         if let Some(player) = self.clients.get_mut(&addr) {
             player.feed_input(data);
         }

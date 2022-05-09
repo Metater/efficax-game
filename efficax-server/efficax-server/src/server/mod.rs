@@ -1,6 +1,7 @@
 pub mod state;
 pub mod world;
 
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::thread::{sleep};
 use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
@@ -58,6 +59,9 @@ pub struct EfficaxServer {
 
     receiver_rx: UnboundedReceiver<NetworkReceiverMessage>,
 
+    udp_to_tcp_addrs: HashMap<SocketAddr, SocketAddr>,
+    tcp_to_udp_addrs: HashMap<SocketAddr, SocketAddr>,
+
     state: ServerState,
 
     start_time: Instant,
@@ -72,6 +76,9 @@ impl EfficaxServer {
             handle: handle.get_new_handle(),
 
             receiver_rx,
+
+            udp_to_tcp_addrs: HashMap::new(),
+            tcp_to_udp_addrs: HashMap::new(),
 
             state: ServerState::new(sender_tx),
 
@@ -137,9 +144,32 @@ impl EfficaxServer {
 impl EfficaxServer {
     pub fn handle_message(&mut self, message: NetworkReceiverMessage) {
         match message {
-            NetworkReceiverMessage::Join(addr) => self.handle_join(addr),
-            NetworkReceiverMessage::Leave(addr) => self.handle_leave(addr),
-            NetworkReceiverMessage::Data(packet) => self.handle_data(packet),
+            NetworkReceiverMessage::Join(addr) => {
+                self.handle_join(addr);
+            }
+            NetworkReceiverMessage::Leave(addr) => {
+                if let Some(udp_addr) = self.tcp_to_udp_addrs.remove(&addr) {
+                    self.udp_to_tcp_addrs.remove(&udp_addr);
+                }
+                self.handle_leave(addr);
+            }
+            NetworkReceiverMessage::InitUDP((addr, udp_port)) => {
+                let udp_addr = SocketAddr::new(addr.ip(), udp_port);
+                self.udp_to_tcp_addrs.insert(udp_addr, addr);
+                self.tcp_to_udp_addrs.insert(addr, udp_addr);
+            }
+            NetworkReceiverMessage::Data(packet) => {
+                let mut addr = packet.get_addr();
+                if !packet.is_tcp {
+                    if let Some(&tcp_addr) = self.udp_to_tcp_addrs.get(&addr) {
+                        addr = tcp_addr;
+                    }
+                    else {
+                        return;
+                    }
+                }
+                self.handle_data(packet, addr);
+            }
         }
     }
     
@@ -153,13 +183,13 @@ impl EfficaxServer {
         self.state.leave(addr);
     }
     
-    fn handle_data(&mut self, packet: NetworkPacket) {
+    fn handle_data(&mut self, packet: NetworkPacket, addr: SocketAddr) {
         match packet.data {
             NetworkData::Input(ref data) => {
-                self.state.input_data(packet.get_addr(), data);
+                self.state.input_data(addr, data);
             }
             _ => {
-                println!("[server]: client: {} sent unhandleable packet: {:?}", packet.get_addr(), packet.data);
+                println!("[server]: client: {} sent unhandleable packet: {:?}", addr, packet.data);
             }
         }
     }

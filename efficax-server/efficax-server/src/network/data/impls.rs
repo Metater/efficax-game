@@ -44,6 +44,7 @@ impl bincode::Decode for NetworkData {
 // TickUpdateData
 impl bincode::Encode for TickUpdateData {
     fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> Result<(), bincode::error::EncodeError> {
+        <u8 as bincode::Encode>::encode(&self.tick_id, encoder)?;
         <u8 as bincode::Encode>::encode(&(self.entity_updates.len() as u8), encoder)?;
         for entity_update in &self.entity_updates {
             entity_update.encode(encoder)?;
@@ -53,12 +54,14 @@ impl bincode::Encode for TickUpdateData {
 }
 impl bincode::Decode for TickUpdateData {
     fn decode<D: bincode::de::Decoder>(decoder: &mut D) -> Result<Self, bincode::error::DecodeError> {
+        let tick_id = <u8 as bincode::Decode>::decode(decoder)?;
         let len = <u8 as bincode::Decode>::decode(decoder)?;
         let mut entity_updates= Vec::new();
         for _ in 0..len {
             entity_updates.push(<EntityUpdateData as bincode::Decode>::decode(decoder)?);
         }
         Ok(TickUpdateData {
+            tick_id,
             entity_updates
         })
     }

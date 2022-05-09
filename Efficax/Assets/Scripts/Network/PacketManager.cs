@@ -38,13 +38,12 @@ public class PacketManager : MonoBehaviour
         ExecuteActions(fixedUpdateQueue);
     }
 
-    public void Handle(NetDataReader reader)
+    public void Handle(NetDataReader reader, bool isTcp)
     {
         byte packetType = reader.GetByte();
         switch (packetType)
         {
             case 2:
-                print("tick");
                 HandleTickUpdate(reader);
                 break;
             default:
@@ -56,10 +55,10 @@ public class PacketManager : MonoBehaviour
     private void HandleTickUpdate(NetDataReader reader)
     {
         TickUpdateData data = new TickUpdateData().Read(reader);
-        fixedUpdateQueue.Enqueue(() => {
+        updateQueue.Enqueue(() => {
             foreach (EntityUpdateData entityUpdate in data.entityUpdates)
             {
-                gameManager.entityManager.UpdateEntity(entityUpdate);
+                gameManager.entityManager.UpdateEntity(entityUpdate, data.tickId);
             }
         });
     }

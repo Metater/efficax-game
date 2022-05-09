@@ -32,7 +32,9 @@ async fn start_sending(mut sender_rx: UnboundedReceiver<NetworkSenderMessage>, u
             }
             NetworkSenderMessage::InitUDP((addr, udp_port)) => {
                 if let Some(client) = clients.get_mut(&addr) {
-                    client.udp_port = udp_port;
+                    if client.udp_port == 0 {
+                        client.udp_port = udp_port;
+                    }
                 }
             }
             NetworkSenderMessage::Data(packet) => {

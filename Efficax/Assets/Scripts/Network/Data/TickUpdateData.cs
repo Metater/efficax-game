@@ -7,10 +7,12 @@ using UnityEngine;
 
 public class TickUpdateData : IReadData<TickUpdateData>
 {
+    public byte tickId;
     public List<EntityUpdateData> entityUpdates = new List<EntityUpdateData>();
 
     public TickUpdateData Read(NetDataReader reader)
     {
+        tickId = reader.GetByte();
         byte entityUpdateCount = reader.GetByte();
         for (int i = 0; i < entityUpdateCount; i++)
         {

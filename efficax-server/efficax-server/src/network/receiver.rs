@@ -163,6 +163,9 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, sender_t
                                         if sender_tx.send(NetworkSenderMessage::InitUDP((addr, udp_port))).is_err() {
                                             return Ok(())
                                         }
+                                        if receiver_tx.send(NetworkReceiverMessage::InitUDP((addr, udp_port))).is_err() {
+                                            return Ok(())
+                                        }
                                     },
                                     other => {
                                         let packet = NetworkPacket::unicast(true, addr, other);
