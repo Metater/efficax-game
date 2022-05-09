@@ -73,9 +73,7 @@ public class Entity : MonoBehaviour
 
         if (sweepedUpdates[0].time != 0 && sweepedUpdates[1].time != 0)
         {
-            print(sweepedUpdates[0].time + ":" + sweepedUpdates[1].time);
             float step = Mathf.InverseLerp(sweepedUpdates[0].time, sweepedUpdates[1].time, sweepTime);
-            print(sweepTime);
             sprite.transform.position = Vector2.Lerp(sweepedUpdates[0].pos, sweepedUpdates[1].pos, step);
         }
     }
@@ -94,8 +92,8 @@ public class Entity : MonoBehaviour
 
     public virtual void UpdateEnity(EntityUpdateData data, byte tickId)
     {
-        //if (UnityEngine.Random.Range(0, 100) < 25)
-            //return;
+        //if (UnityEngine.Random.Range(0, 100) < (5f / 25f) * 100f)
+           // return;
 
         if (!init)
         {

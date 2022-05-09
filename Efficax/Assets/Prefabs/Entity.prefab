@@ -133,7 +133,7 @@ MonoBehaviour:
   rb: {fileID: 2337116862230769619}
   sprite: {fileID: 4439696856997881590}
   rotateLerp: 0.4
-  interpolationSweepDelay: 0.05
+  interpolationSweepDelay: 0.12
 --- !u!50 &2337116862230769619
 Rigidbody2D:
   serializedVersion: 4
