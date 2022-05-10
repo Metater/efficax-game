@@ -7,9 +7,6 @@ using UnityEngine;
 
 public class Entity : MonoBehaviour
 {
-    [SerializeField] private Rigidbody2D rb;
-    [SerializeField] private GameObject sprite;
-
     [SerializeField] private float rotateLerp;
 
     [SerializeField] private float interpolationSweepDelay;
@@ -74,7 +71,7 @@ public class Entity : MonoBehaviour
         if (sweepedUpdates[0].time != 0 && sweepedUpdates[1].time != 0)
         {
             float step = Mathf.InverseLerp(sweepedUpdates[0].time, sweepedUpdates[1].time, sweepTime);
-            sprite.transform.position = Vector2.Lerp(sweepedUpdates[0].pos, sweepedUpdates[1].pos, step);
+            transform.position = Vector2.Lerp(sweepedUpdates[0].pos, sweepedUpdates[1].pos, step);
         }
     }
 

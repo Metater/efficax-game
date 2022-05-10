@@ -111,7 +111,6 @@ impl ServerState {
     }
 
     pub fn input_data(&mut self, addr: SocketAddr, data: &InputData) {
-        println!("got input data: {:?} from: {}", data, addr);
         if let Some(player) = self.clients.get_mut(&addr) {
             player.feed_input(data);
         }
