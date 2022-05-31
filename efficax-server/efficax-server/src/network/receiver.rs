@@ -30,42 +30,46 @@ pub async fn start(receiver_tx: UnboundedSender<NetworkReceiverMessage>, sender_
     let udp_receiver_stop_notifier = stop_notifier.clone();
     let udp_receiver_handle = tokio::spawn(async move {
         println!("[network udp receiver]: started");
-        let mut buf = [0u8; UDP_BUF_SIZE];
-        loop {
-            select! {
-                recv_result = receiver_udp_socket.recv_from(&mut buf) => {
-                    match recv_result {
-                        Ok((len, addr)) => {
-                            let packet_slice = &buf[..len];
-                            let result: Result<(NetworkData, usize), bincode::error::DecodeError> = bincode::decode_from_slice(packet_slice, bincode::config::legacy());
-                            match result {
-                                Ok((data, _)) => {
-                                    let packet = NetworkPacket::unicast(false, addr, data);
-                                    let message = NetworkReceiverMessage::Data(packet);
-                                    if udp_receiver_tx.send(message).is_err() {
-                                        break;
-                                    }
-                                }
-                                Err(e) => {
-                                    // TODO kick client if too many errors?
-                                    println!("[network udp receiver]: error: {} client: {}", e, addr);
-                                }
-                            }
-                        }
-                        Err(_e) => {
-                            continue;
-                        }
-                    }
-                },
-                () = udp_receiver_stop_notifier.notified() => {
-                    break;
-                }
-            }
-        }
+        udp_receive(receiver_udp_socket, udp_receiver_tx, udp_receiver_stop_notifier).await;
         println!("[network udp receiver]: stopped");
     });
 
     (udp_socket, stop_notifier, receiver_handle, udp_receiver_handle)
+}
+
+async fn udp_receive(receiver_udp_socket: Arc<UdpSocket>, udp_receiver_tx: UnboundedSender<NetworkReceiverMessage>, udp_receiver_stop_notifier: Arc<Notify>) {
+    let mut buf = [0u8; UDP_BUF_SIZE];
+    loop {
+        select! {
+            recv_result = receiver_udp_socket.recv_from(&mut buf) => {
+                match recv_result {
+                    Ok((len, addr)) => {
+                        let packet_slice = &buf[..len];
+                        let result: Result<(NetworkData, usize), bincode::error::DecodeError> = bincode::decode_from_slice(packet_slice, bincode::config::legacy());
+                        match result {
+                            Ok((data, _)) => {
+                                let packet = NetworkPacket::unicast(false, addr, 0, data);
+                                let message = NetworkReceiverMessage::Data(packet);
+                                if udp_receiver_tx.send(message).is_err() {
+                                    break;
+                                }
+                            }
+                            Err(e) => {
+                                // TODO kick client if too many errors?
+                                println!("[network udp receiver]: error: {} client: {}", e, addr);
+                            }
+                        }
+                    }
+                    Err(_e) => {
+                        continue;
+                    }
+                }
+            },
+            () = udp_receiver_stop_notifier.notified() => {
+                break;
+            }
+        }
+    }
 }
 
 async fn start_accepting(listener: TcpListener, receiver_tx: UnboundedSender<NetworkReceiverMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>, stop_notifier: Arc<Notify>) {
@@ -84,14 +88,10 @@ async fn start_accepting(listener: TcpListener, receiver_tx: UnboundedSender<Net
                 let (reader, writer) = stream.into_split();
         
                 let receiver_channel = receiver_tx.clone();
-                if receiver_channel.send(NetworkReceiverMessage::Join(addr)).is_err() {
-                    break;
-                }
+                receiver_channel.send(NetworkReceiverMessage::Join(addr)).ok();
     
                 let mut sender_channel = sender_tx.clone();
-                if sender_channel.send(NetworkSenderMessage::Join(NetworkClient::new(addr, writer))).is_err() {
-                    break;
-                }
+                sender_channel.send(NetworkSenderMessage::Join(NetworkClient::new(addr, writer))).ok();
 
                 let receiver_stop_notifier = stop_notifier.clone();
                 tokio::spawn(async move {
@@ -143,9 +143,10 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, sender_t
                     }
         
                     let mut declared_packet_size = get_packet_size(&ring_buf);
+                    let mut total_packet_size = declared_packet_size as usize + 2;
                     
-                    while available_data >= declared_packet_size as usize + 2 {
-                        if declared_packet_size <= 0 {
+                    while available_data >= total_packet_size {
+                        if declared_packet_size == 0 {
                             return Err(io::Error::new(io::ErrorKind::Other, "declared packet size too small"));
                         }
                         if declared_packet_size > BUF_SIZE as u16 {
@@ -154,10 +155,10 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, sender_t
         
                         let slice = ring_buf.make_contiguous();
                         
-                        let packet_slice = &slice[2..(declared_packet_size as usize) + 2];
+                        let packet_slice = &slice[2..total_packet_size];
                         let result: Result<(NetworkData, usize), bincode::error::DecodeError> = bincode::decode_from_slice(packet_slice, bincode::config::legacy());
                         match result {
-                            Ok((data, len)) => {
+                            Ok((data, _)) => {
                                 match data {
                                     NetworkData::InitUDP(udp_port) => {
                                         if sender_tx.send(NetworkSenderMessage::InitUDP((addr, udp_port))).is_err() {
@@ -168,14 +169,14 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, sender_t
                                         }
                                     },
                                     other => {
-                                        let packet = NetworkPacket::unicast(true, addr, other);
+                                        let packet = NetworkPacket::unicast(true, addr, 0, other);
                                         let message = NetworkReceiverMessage::Data(packet);
                                         if receiver_tx.send(message).is_err() {
                                             return Ok(());
                                         }
                                     }
                                 }
-                                ring_buf.drain(..len + 2);
+                                ring_buf.drain(..total_packet_size);
                             }
                             Err(e) => {
                                 return Err(io::Error::new(io::ErrorKind::Other, format!("unparsable packet: {}", e)));
@@ -185,6 +186,7 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, sender_t
                         available_data = ring_buf.len();
                         if available_data >= 2 {
                             declared_packet_size = get_packet_size(&ring_buf);
+                            total_packet_size = declared_packet_size as usize + 2;
                         }
                     }
                 }

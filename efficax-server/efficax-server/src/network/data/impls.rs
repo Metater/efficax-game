@@ -1,12 +1,11 @@
-use super::{NetworkData, InputData, ChatData, TickUpdateData, EntityUpdateData};
+use super::{NetworkData, InputData, ChatData, SnapshotData, EntitySnapshotData};
 
 // NetworkData
 impl bincode::Encode for NetworkData {
     fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> Result<(), bincode::error::EncodeError> {
         match self {
             NetworkData::Input(data) => {
-                <u8 as bincode::Encode>::encode(&0u8, encoder)?;
-                data.encode(encoder)?;
+                panic!("encoding an input packet not supported");
             }
             NetworkData::Chat(data) => {
                 <u8 as bincode::Encode>::encode(&1u8, encoder)?;
@@ -30,7 +29,7 @@ impl bincode::Decode for NetworkData {
         match variant_index {
             0 => Ok(NetworkData::Input(<InputData as bincode::Decode>::decode(decoder)?)),
             1 => Ok(NetworkData::Chat(<ChatData as bincode::Decode>::decode(decoder)?)),
-            2 => Ok(NetworkData::TickUpdate(<TickUpdateData as bincode::Decode>::decode(decoder)?)),
+            2 => Ok(NetworkData::TickUpdate(<SnapshotData as bincode::Decode>::decode(decoder)?)),
             3 => Ok(NetworkData::InitUDP(<u16 as bincode::Decode>::decode(decoder)?)),
             variant => Err(bincode::error::DecodeError::UnexpectedVariant {
                 found: variant as u32,
@@ -41,28 +40,25 @@ impl bincode::Decode for NetworkData {
     }
 }
 
-// TickUpdateData
-impl bincode::Encode for TickUpdateData {
+// SnapshotData
+impl bincode::Encode for SnapshotData {
     fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> Result<(), bincode::error::EncodeError> {
-        <u8 as bincode::Encode>::encode(&self.tick_id, encoder)?;
-        <u8 as bincode::Encode>::encode(&(self.entity_updates.len() as u8), encoder)?;
-        for entity_update in &self.entity_updates {
-            entity_update.encode(encoder)?;
+        <u8 as bincode::Encode>::encode(&(self.entity_snapshots.len() as u8), encoder)?;
+        for entity_snapshot in &self.entity_snapshots {
+            entity_snapshot.encode(encoder)?;
         }
         Ok(())
     }
 }
-impl bincode::Decode for TickUpdateData {
+impl bincode::Decode for SnapshotData {
     fn decode<D: bincode::de::Decoder>(decoder: &mut D) -> Result<Self, bincode::error::DecodeError> {
-        let tick_id = <u8 as bincode::Decode>::decode(decoder)?;
         let len = <u8 as bincode::Decode>::decode(decoder)?;
-        let mut entity_updates= Vec::new();
+        let mut entity_snapshots= Vec::new();
         for _ in 0..len {
-            entity_updates.push(<EntityUpdateData as bincode::Decode>::decode(decoder)?);
+            entity_snapshots.push(<EntitySnapshotData as bincode::Decode>::decode(decoder)?);
         }
-        Ok(TickUpdateData {
-            tick_id,
-            entity_updates
+        Ok(SnapshotData {
+            entity_snapshots
         })
     }
 }

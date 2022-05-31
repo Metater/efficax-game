@@ -64,12 +64,13 @@ async fn start_sending(mut sender_rx: UnboundedReceiver<NetworkSenderMessage>, u
 }
 
 fn encode_packet(packet: &NetworkPacket, buf: &mut [u8]) -> usize {
-    let encode_result = bincode::encode_into_slice(&packet.data, &mut buf[2..], bincode::config::legacy());
+    let encode_result = bincode::encode_into_slice(&packet.data, &mut buf[3..], bincode::config::legacy());
 
     match encode_result {
         Ok(len) => {
             LittleEndian::write_u16(&mut buf[..2], len as u16);
-            len + 2
+            buf[2] = packet.tick_id;
+            len + 3
         }
         Err(e) => {
             panic!("[network sender]: error: {} encoding data: {:?} for client(s): {:?}", e, packet.data, packet.addrs);

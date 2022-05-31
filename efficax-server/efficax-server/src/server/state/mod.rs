@@ -50,6 +50,10 @@ impl ServerState {
 
         self.tick_id += 1;
     }
+
+    pub fn get_tick_id_u8(&self) -> u8 {
+        (self.tick_id % 256) as u8
+    }
 }
 
 impl ServerState {
@@ -67,10 +71,15 @@ impl ServerState {
     }
     
     fn send_client_updates(&mut self) {
+        if self.clients.len() == 0 {
+            return
+        }
+
         let mut entity_updates = Vec::new();
 
         for player in self.clients.values() {
             if let Some(entity) = self.zone.entities.get(&player.id) {
+                // Every time bc udp is unreliable
                 //if entity.last_moved_on_tick == self.tick_id || entity.last_moved_on_tick == 0 {
                 let update = EntityUpdateData {
                     id: entity.id,
@@ -83,12 +92,9 @@ impl ServerState {
         }
 
         let addrs: Vec<SocketAddr> = self.clients.keys().copied().collect();
-        if addrs.len() > 0 { // if there are clients, REMOVE IF OTHER STUFF
-            self.net.multicast(false, addrs, NetworkData::TickUpdate(TickUpdateData {
-                tick_id: (self.tick_id % 256) as u8,
-                entity_updates
-            }));
-        }
+        self.net.multicast(false, addrs, self.get_tick_id_u8(), NetworkData::TickUpdate(TickUpdateData {
+            entity_updates
+        }));
     }
 }
 
@@ -98,7 +104,7 @@ impl ServerState {
         
         entity
         .with_bounds(true, MetaitusCollider::new(Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
-        .with_drag(true, 3.0)
+        .with_drag(true, 6.0)
         .with_collider(true, MetaitusCollider::new(Vector2::new(-0.475, -0.475), Vector2::new(0.475, 0.475)))
         .with_repulsion_radius(true, 0.4, 48.0, 3.0);
 

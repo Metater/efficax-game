@@ -84,18 +84,19 @@ public class Entity : MonoBehaviour
         {
             desiredAngleQueue.Dequeue();
         }
-        rb.MoveRotation(Mathf.LerpAngle(transform.localEulerAngles.z, desiredAngleQueue.Average(), rotateLerp));
+        //rb.MoveRotation(Mathf.LerpAngle(transform.localEulerAngles.z, desiredAngleQueue.Average(), rotateLerp));
     }
 
     public virtual void UpdateEnity(EntityUpdateData data, byte tickId)
     {
-        //if (UnityEngine.Random.Range(0, 100) < (5f / 25f) * 100f)
-           // return;
+        //if (UnityEngine.Random.Range(0, 100) < (12f / 25f) * 100f)
+           //return;
 
         if (!init)
         {
             init = true;
             leadingTick = tickId;
+            // TODO UPDATE POS ON INIT
             UpdatePosition(data.pos);
         }
         else
@@ -118,13 +119,15 @@ public class Entity : MonoBehaviour
 
     private void UpdatePosition(Vector2 pos)
     {
-        Vector2 lastPos = rb.position;
-        rb.MovePosition(pos);
+        //Vector2 lastPos = rb.position;
+        //rb.MovePosition(pos);
+        /*
         if (pos != lastPos)
         {
             Vector2 moveVector = pos - lastPos;
             float desiredAngle = Vector2.SignedAngle(Vector2.up, moveVector);
             desiredAngleQueue.Enqueue(desiredAngle);
         }
+        */
     }
 }

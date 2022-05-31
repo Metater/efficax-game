@@ -119,9 +119,6 @@ impl MetaitusEntity {
                     self.apply_drag(delta_time);
                 }
             }
-            if self.moved_xy && self.has_drag {
-                self.apply_drag(delta_time);
-            }
         }
         else {
             // cannot move, velocity is zero
