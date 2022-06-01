@@ -7,7 +7,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use metaitus::{zone::MetaitusZone, collider::MetaitusCollider};
 
-use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntityUpdateData, TickUpdateData, NetworkData, InputData, types::PositionData}};
+use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntitySnapshotData, SnapshotData, NetworkData, InputData, types::PositionData}};
 
 use self::client_state::ClientState;
 
@@ -81,7 +81,7 @@ impl ServerState {
             if let Some(entity) = self.zone.entities.get(&player.id) {
                 // Every time bc udp is unreliable
                 //if entity.last_moved_on_tick == self.tick_id || entity.last_moved_on_tick == 0 {
-                let update = EntityUpdateData {
+                let update = EntitySnapshotData {
                     id: entity.id,
                     pos: PositionData::new(entity.pos),
                     input_sequence: player.input_sequence,
@@ -92,8 +92,8 @@ impl ServerState {
         }
 
         let addrs: Vec<SocketAddr> = self.clients.keys().copied().collect();
-        self.net.multicast(false, addrs, self.get_tick_id_u8(), NetworkData::TickUpdate(TickUpdateData {
-            entity_updates
+        self.net.multicast(false, addrs, self.get_tick_id_u8(), NetworkData::TickUpdate(SnapshotData {
+            entity_snapshots: entity_updates
         }));
     }
 }

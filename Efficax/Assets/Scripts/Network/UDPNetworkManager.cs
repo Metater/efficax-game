@@ -51,9 +51,11 @@ public class UDPNetworkManager : UdpClient
     {
         reader.SetSource(buffer, (int)offset, (int)size);
 
+        byte tickId = reader.GetByte();
+
         while (reader.AvailableBytes > 0)
         {
-            packetManager.Handle(reader, false);
+            packetManager.Handle(reader, false, tickId);
         }
 
         ReceiveAsync();

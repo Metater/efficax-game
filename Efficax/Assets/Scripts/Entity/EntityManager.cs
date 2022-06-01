@@ -19,7 +19,7 @@ public class EntityManager : MonoBehaviour
         entities = new Dictionary<ulong, Entity>();
     }
 
-    public void UpdateEntity(EntityUpdateData data, byte tickId)
+    public void UpdateEntity(EntityUpdateData data)
     {
         Entity entity;
         if (!entities.ContainsKey(data.id))
@@ -32,6 +32,6 @@ public class EntityManager : MonoBehaviour
         {
             entity = entities[data.id];
         }
-        entity.UpdateEnity(data, tickId);
+        entity.UpdateEnity(data);
     }
 }

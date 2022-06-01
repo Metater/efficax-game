@@ -24,9 +24,12 @@ impl ClientState {
     }
 
     pub fn feed_input(&mut self, data: &InputData) {
-        // wrap around data to ensure valid input
-        self.last_input = data.input % 9;
-        self.input_sequence = data.input_sequence;
+        let next_is_greater_or_equal = data.input_sequence >= self.input_sequence;
+        let next_wraps = data.input_sequence < 63 && self.input_sequence > 127;
+        if next_is_greater_or_equal || next_wraps {
+            self.last_input = data.input % 9;
+            self.input_sequence = data.input_sequence;
+        }
     }
 
     pub fn get_movement_force(&self) -> Vector2<f32> {

@@ -18,7 +18,7 @@ public class Entity : MonoBehaviour
 
     private GameManager gameManager;
 
-    private (float time, Vector2 pos)[] interpolationBuffer;
+    private Vector3[] interpolationBuffer;
 
     public void Init(GameManager gameManager)
     {
@@ -28,7 +28,7 @@ public class Entity : MonoBehaviour
     private void Awake()
     {
         desiredAngleQueue = new Queue<float>(new float[] { 0 });
-        interpolationBuffer = new (float, Vector2)[256];
+        interpolationBuffer = new Vector3[256];
     }
 
     private void Start()
@@ -38,40 +38,48 @@ public class Entity : MonoBehaviour
 
     private void Update()
     {
-        (float time, Vector2 pos)[] sweepedUpdates = new (float, Vector2)[2];
+        //(float time, Vector2 pos)[] sweepedUpdates = new (float, Vector2)[2];
+        Vector3 lastUpdate = Vector3.zero;
+        Vector3 nextUpdate = Vector3.zero;
         float sweepTime = Time.time - interpolationSweepDelay;
 
         // will cause movement delay when entity spawns in for this client
         for (int i = 0; i < 256; i++)
         {
-            int index = leadingTick - i;
-            if (index < 0)
-                index = 256 + index;
+            Vector3 update = interpolationBuffer[i];
 
-            (float time, Vector2 pos) = interpolationBuffer[index];
-            if (Time.time - time < 2f && time != 0)
+            // Check if update is null
+            if (update.z == 0)
+                continue;
+            // Check if update is expired
+            if (Time.time - update.z > 2f)
+                continue;
+
+            float delta = update.z - sweepTime;
+
+            if (delta < 0) // past
             {
-                if (time <= sweepTime) // past
-                {
-                    if (Mathf.Abs(time - sweepTime) < Mathf.Abs(sweepedUpdates[0].time - sweepTime) || sweepedUpdates[0].time == 0)
-                    {
-                        sweepedUpdates[0] = (time, pos);
-                    }
-                }
-                else // future
-                {
-                    if (Mathf.Abs(time - sweepTime) < Mathf.Abs(sweepedUpdates[1].time - sweepTime) || sweepedUpdates[1].time == 0)
-                    {
-                        sweepedUpdates[1] = (time, pos);
-                    }
-                }
+                //print("past");
+                if (delta < lastUpdate.z - sweepTime || lastUpdate.z == 0)
+                    lastUpdate = update;
+            }
+            else // future
+            {
+                //print("future");
+                if (delta > nextUpdate.z - sweepTime || nextUpdate.z == 0)
+                    nextUpdate = update;
             }
         }
 
-        if (sweepedUpdates[0].time != 0 && sweepedUpdates[1].time != 0)
+        if (lastUpdate.z != 0 && nextUpdate.z != 0)
         {
-            float step = Mathf.InverseLerp(sweepedUpdates[0].time, sweepedUpdates[1].time, sweepTime);
-            transform.position = Vector2.Lerp(sweepedUpdates[0].pos, sweepedUpdates[1].pos, step);
+            float step = Mathf.InverseLerp(lastUpdate.z, nextUpdate.z, sweepTime);
+            print(sweepTime + ": " + step + ": ");
+            transform.position = Vector2.Lerp(lastUpdate, nextUpdate, step);
+        }
+        else
+        {
+            print("BAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
     }
 
@@ -87,34 +95,36 @@ public class Entity : MonoBehaviour
         //rb.MoveRotation(Mathf.LerpAngle(transform.localEulerAngles.z, desiredAngleQueue.Average(), rotateLerp));
     }
 
-    public virtual void UpdateEnity(EntityUpdateData data, byte tickId)
+    public virtual void UpdateEnity(EntityUpdateData data)
     {
         //if (UnityEngine.Random.Range(0, 100) < (12f / 25f) * 100f)
-           //return;
+        //return;
+
+        //print(data.TickId + ": " + data.pos);
 
         if (!init)
         {
             init = true;
-            leadingTick = tickId;
+            leadingTick = data.TickId;
             // TODO UPDATE POS ON INIT
             UpdatePosition(data.pos);
         }
         else
         {
-            if (tickId > leadingTick)
+            if (data.TickId > leadingTick)
             {
-                leadingTick = tickId;
+                leadingTick = data.TickId;
             }
-            else if (leadingTick > 127 && tickId < 63)
+            else if (leadingTick > 127 && data.TickId < 63)
             {
-                leadingTick = tickId;
+                leadingTick = data.TickId;
             }
         }
 
         // TODO DONT SAVE UPDATE IF SWEEP COULD HIT IT
         // CALCULATE TIME.TIME LATER
         // WILL NEED TO OFFSET LATER ^^^^ DONT TRUST TWO RATES ON DIFF COMPUTERS?
-        interpolationBuffer[tickId] = (Time.time, data.pos);
+        interpolationBuffer[data.TickId] = new Vector3(data.pos.x, data.pos.y, Time.time);
     }
 
     private void UpdatePosition(Vector2 pos)

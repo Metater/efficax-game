@@ -16,14 +16,13 @@ public class GameManager : MonoBehaviour
     public ulong ClientTick { get; private set; } = 0;
 
     private byte offInput = 0;
-    //private byte lastSentInput = 255;
     private byte inputSequence = 0;
 
     private bool sentUDPPort = false;
 
     private void Awake()
     {
-
+        Application.targetFrameRate = 50;
     }
 
     private void Start()
@@ -76,7 +75,7 @@ public class GameManager : MonoBehaviour
 
     private byte GetInput()
     {
-        Vector2 moveVector = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        Vector2 moveVector = new(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         if (moveVector == Vector2.zero)
             return 0;
         float angle = 0.5f - (Mathf.Atan2(-moveVector.x, -moveVector.y) / (-2 * Mathf.PI));

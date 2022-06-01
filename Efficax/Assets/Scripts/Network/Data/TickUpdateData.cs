@@ -5,19 +5,23 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class TickUpdateData : IReadData<TickUpdateData>
+public class TickUpdateData : NetworkData, IReadData<TickUpdateData>
 {
-    public byte tickId;
-    public List<EntityUpdateData> entityUpdates = new List<EntityUpdateData>();
+    public List<EntityUpdateData> entityUpdates = new();
 
     public TickUpdateData Read(NetDataReader reader)
     {
-        tickId = reader.GetByte();
         byte entityUpdateCount = reader.GetByte();
         for (int i = 0; i < entityUpdateCount; i++)
         {
-            entityUpdates.Add(new EntityUpdateData().Read(reader));
+            entityUpdates.Add(new EntityUpdateData().SetTickId(TickId).Read(reader));
         }
+        return this;
+    }
+
+    public TickUpdateData SetTickId(byte tickId)
+    {
+        TickId = tickId;
         return this;
     }
 }
