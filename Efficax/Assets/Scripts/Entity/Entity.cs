@@ -42,7 +42,6 @@ public class Entity : MonoBehaviour
         Vector3 nextUpdate = Vector3.zero;
         float sweepTime = Time.time - interpolationSweepDelay;
 
-        // will cause movement delay when entity spawns in for this client
         for (int i = 0; i < 256; i++)
         {
             Vector3 update = interpolationBuffer[i];
@@ -55,13 +54,11 @@ public class Entity : MonoBehaviour
 
             if (delta < 0) // past
             {
-                //print("past");
                 if (delta > lastUpdate.z - sweepTime || lastUpdate.z == 0)
                     lastUpdate = update;
             }
             else // future
             {
-                //print("future");
                 if (delta < nextUpdate.z - sweepTime || nextUpdate.z == 0)
                     nextUpdate = update;
             }
@@ -94,13 +91,16 @@ public class Entity : MonoBehaviour
     private void FixedUpdate()
     {
         interpolationSweepDelay *= interpolationSweepDelayDecay;
+        if (interpolationSweepDelayDecay > 0.99999f)
+        {
+            interpolationSweepDelayDecay = 0.999f;
+        }
         // TODO think about out of order packets are treated, how does that wierd time effect lerping? yes
-        // TODO Eventually set rb.MovePosition every frame, interpolation for rbs only works between fixed updates
     }
 
     public virtual void UpdateEnity(EntityUpdateData data)
     {
-        //if (UnityEngine.Random.Range(0, 100) < (2f / 25f) * 100f)
+        //if (UnityEngine.Random.Range(0, 100) < (1f / 25f) * 100f)
             //return;
 
         if (!init)
