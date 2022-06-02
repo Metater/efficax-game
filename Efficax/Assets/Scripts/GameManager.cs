@@ -20,9 +20,11 @@ public class GameManager : MonoBehaviour
 
     private bool sentUDPPort = false;
 
+    [SerializeField] private GameObject test;
+
     private void Awake()
     {
-        Application.targetFrameRate = 50;
+
     }
 
     private void Start()

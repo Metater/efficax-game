@@ -4,7 +4,7 @@ use super::{NetworkData, InputData, ChatData, SnapshotData, EntitySnapshotData};
 impl bincode::Encode for NetworkData {
     fn encode<E: bincode::enc::Encoder>(&self, encoder: &mut E) -> Result<(), bincode::error::EncodeError> {
         match self {
-            NetworkData::Input(data) => {
+            NetworkData::Input(_) => {
                 panic!("encoding an input packet not supported");
             }
             NetworkData::Chat(data) => {
