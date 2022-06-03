@@ -45,10 +45,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c58a5165f962db4bb43cc1feed4a551, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  velocityToUpdateRotation: 2
+  velocityToUpdateRotation: 1.25
   interpolationSweepDelay: 0.08
   interpolationSweepDelayGrowth: 1.0625
   interpolationSweepDelayDecay: 0.999
+  rotationAverageWindowTime: 0.12
 --- !u!212 &3061075523680366857
 SpriteRenderer:
   m_ObjectHideFlags: 0

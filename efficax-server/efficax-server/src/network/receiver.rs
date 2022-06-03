@@ -12,8 +12,8 @@ const RING_SIZE: usize = 8192;
 const UDP_BUF_SIZE: usize = 508;
 
 pub async fn start(receiver_tx: UnboundedSender<NetworkReceiverMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>) -> (Arc<UdpSocket>, Arc<Notify>, JoinHandle<()>, JoinHandle<()>) {
-    let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
-    let udp_socket = Arc::new(UdpSocket::bind("0.0.0.0:8080").await.unwrap());
+    let listener = TcpListener::bind("0.0.0.0:25569").await.unwrap();
+    let udp_socket = Arc::new(UdpSocket::bind("0.0.0.0:25569").await.unwrap());
 
     let stop_notifier = Arc::new(Notify::new());
 

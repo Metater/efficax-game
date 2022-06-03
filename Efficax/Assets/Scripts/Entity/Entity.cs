@@ -13,13 +13,16 @@ public class Entity : MonoBehaviour
     [SerializeField] private float interpolationSweepDelayGrowth;
     [SerializeField] private float interpolationSweepDelayDecay;
 
-    private bool init = false;
-    private byte leadingTick = 0;
+    [SerializeField] private float rotationAverageWindowTime;
 
     private GameManager gameManager;
 
+    private bool leadingTickValid = false;
+    private byte leadingTick = 0;
+
     private bool lerpStart = false;
     private Vector3[] interpolationBuffer;
+    private Queue<Vector2> rotationAverageWindow;
 
     public void Init(GameManager gameManager)
     {
@@ -29,6 +32,8 @@ public class Entity : MonoBehaviour
     private void Awake()
     {
         interpolationBuffer = new Vector3[256];
+
+        rotationAverageWindow = new();
     }
 
     private void Start()
@@ -64,6 +69,7 @@ public class Entity : MonoBehaviour
             }
         }
 
+        float angle = transform.localEulerAngles.z;
         if (lastUpdate.z != 0 && nextUpdate.z != 0)
         {
             lerpStart = true;
@@ -71,20 +77,36 @@ public class Entity : MonoBehaviour
             Vector2 lastPos = transform.position;
             Vector2 pos = Vector2.Lerp(lastUpdate, nextUpdate, step);
             transform.position = pos;
-            if (lastPos != pos && Vector2.Distance(pos, lastPos) / Time.deltaTime > velocityToUpdateRotation)
+            if (lastPos != pos && (Vector2.Distance(pos, lastPos) / Time.deltaTime > velocityToUpdateRotation))
             {
-                float angle = Vector2.SignedAngle(Vector2.up, pos - lastPos);
-                transform.localEulerAngles = new Vector3(transform.localEulerAngles.x, transform.localEulerAngles.y, angle);
+                angle = Vector2.SignedAngle(Vector2.up, pos - lastPos);
             }
         }
         else
         {
             if (lerpStart)
             {
-                print("Insufficient data to lerp!");
+                print("Insufficient data to lerp, backing off!");
                 interpolationSweepDelayDecay = 1 - ((1 - interpolationSweepDelayDecay) / 4);
                 interpolationSweepDelay *= interpolationSweepDelayGrowth;
             }
+        }
+
+        rotationAverageWindow.Enqueue(new Vector2(angle, Time.time));
+        while (rotationAverageWindow.Count > 0 && rotationAverageWindow.First().y < Time.time - rotationAverageWindowTime)
+        {
+            rotationAverageWindow.Dequeue();
+        }
+        if (rotationAverageWindow.Count > 0)
+        {
+            Vector2 sum = Vector2.zero;
+            foreach (var rotation in rotationAverageWindow)
+            {
+                float angleRad = (rotation.x + 90f) * Mathf.Deg2Rad;
+                sum += new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
+            }
+            sum /= rotationAverageWindow.Count;
+            transform.localEulerAngles = new Vector3(transform.localEulerAngles.x, transform.localEulerAngles.y, Mathf.Atan2(sum.x, sum.y) * -Mathf.Rad2Deg);
         }
     }
 
@@ -103,9 +125,9 @@ public class Entity : MonoBehaviour
         //if (UnityEngine.Random.Range(0, 100) < (1f / 25f) * 100f)
             //return;
 
-        if (!init)
+        if (!leadingTickValid)
         {
-            init = true;
+            leadingTickValid = true;
             leadingTick = data.TickId;
             transform.position = data.pos;
         }

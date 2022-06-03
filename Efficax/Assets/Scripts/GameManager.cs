@@ -31,10 +31,10 @@ public class GameManager : MonoBehaviour
     {
         print("Client connecting...");
 
-        tcp = new TCPNetworkManager(packetManager, "127.0.0.1", 8080);
+        tcp = new TCPNetworkManager(packetManager, "75.0.193.55", 25569);
         tcp.ConnectAsync();
 
-        udp = new UDPNetworkManager(packetManager, "127.0.0.1", 8080);
+        udp = new UDPNetworkManager(packetManager, "75.0.193.55", 25569);
         udp.Connect();
     }
 
