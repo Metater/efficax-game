@@ -44,8 +44,11 @@ async fn start_sending(mut sender_rx: UnboundedReceiver<NetworkSenderMessage>, u
 
                 for addr in &packet.addrs {
                     if let Some(client) = clients.get_mut(addr) {
-                        if packet.is_tcp || client.udp_port == 0 {
+                        if packet.is_tcp {
                             tcp_send(&packet, encoded_data, client).await;
+                        }
+                        else if client.udp_port == 0 {
+                            // Drop data, UDP is unreliable, so it won't matter
                         }
                         else {
                             udp_send(&packet, &encoded_data[2..], client, &udp_socket).await;
@@ -99,7 +102,8 @@ async fn tcp_send(packet: &NetworkPacket, encoded_data: &[u8], client: &mut Netw
 }
 
 async fn udp_send(packet: &NetworkPacket, encoded_data: &[u8], client: &mut NetworkClient, socket: &Arc<UdpSocket>) {
-    if let Err(e) = socket.send_to(encoded_data, SocketAddr::new(client.addr.ip(), client.udp_port)).await {
+    let udp_addr = SocketAddr::new(client.addr.ip(), client.udp_port);
+    if let Err(e) = socket.send_to(encoded_data, udp_addr).await {
         println!("[network sender]: error: {} while writing udp data: {:?} to client: {}", e, packet.data, client.addr);
     }
 }

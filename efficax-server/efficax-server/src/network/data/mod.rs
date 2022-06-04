@@ -5,14 +5,22 @@ pub mod impls;
 
 /* efficax-game schema
 
-TCP packet: (3 + n bytes)
-    data_len: u16
-    tick_id: u8
-    NetworkData...
+S->C:
+    TCP packet: (3 + n bytes)
+        data_len: u16
+        tick_id: u8
+        NetworkData...
 
-UDP packet: (1 + n bytes)
-    tick_id: u8
-    NetworkData...
+    UDP packet: (1 + n bytes)
+        tick_id: u8
+        NetworkData...
+C->S:
+    TCP packet: (2 + n bytes)
+        data_len: u16
+        NetworkData...
+
+    UDP packet: (n bytes)
+        NetworkData...
 
 NetworkData: (1 + n bytes)
     variant: u8
@@ -28,11 +36,14 @@ NetworkData: (1 + n bytes)
             id: u64
             pos: PositionData
             EntitySpecificSnapshotData...
-            EntitySpecificSnapshotData: (n bytes)
+            EntitySpecificSnapshotData: (1 + n bytes)
+                variant: u8
                 0 Player: (1 byte)
                     input_sequence: u8
     3 InitUDP: (TCP C->S) (2 bytes)
         udp_port: u16
+    4 Join: (TCP S->C)
+    5 Leave: (TCP S->C)
 
 Shared:
     PositionData: (4 bytes)
@@ -44,51 +55,57 @@ Shared:
 pub enum NetworkData {
     Input(InputData),
     Chat(ChatData),
-    TickUpdate(SnapshotData),
+    Snapshot(SnapshotData),
     InitUDP(u16),
-    //Join(JoinData),
-    //Leave(LeaveData),
+    Join(JoinData),
+    Leave(LeaveData),
 }
 
-// Input C->S UDP
+// Input
 #[derive(bincode::Decode, Debug)]
 pub struct InputData {
     pub input: u8,
     pub input_sequence: u8,
 }
 
-// Chat C->S TCP || S->C TCP
+// Chat
 #[derive(bincode::Encode, bincode::Decode, Debug)]
 pub struct ChatData {
     pub message: String
 }
 
-// Snapshot S->C UDP
+// Snapshot
 #[derive(Debug)]
 pub struct SnapshotData {
     pub entity_snapshots: Vec<EntitySnapshotData>,
 }
 
-#[derive(bincode::Encode, bincode::Decode, Debug)]
+#[derive(bincode::Encode, Debug)]
 pub struct EntitySnapshotData {
     pub id: u64,
     pub pos: PositionData,
-    pub input_sequence: u8,
+    pub data: EntitySpecificSnapshotData,
 }
 
+#[derive(Debug)]
 pub enum EntitySpecificSnapshotData {
     // input_sequence
-    Player(u8)
+    Player(PlayerSnapshotData)
 }
 
-/*
-#[derive(bincode::Encode, bincode::Decode, Debug)]
+#[derive(bincode::Encode, Debug)]
+pub struct PlayerSnapshotData {
+    pub input_sequence: u8
+}
+
+// Join
+#[derive(bincode::Encode, Debug)]
 pub struct JoinData {
 
 }
 
-#[derive(bincode::Encode, bincode::Decode, Debug)]
+// Leave
+#[derive(bincode::Encode, Debug)]
 pub struct LeaveData {
 
 }
- */

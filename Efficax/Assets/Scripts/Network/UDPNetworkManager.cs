@@ -9,9 +9,9 @@ using UdpClient = NetCoreServer.UdpClient;
 
 public class UDPNetworkManager : UdpClient
 {
-    private PacketManager packetManager;
+    private readonly PacketManager packetManager;
 
-    private NetDataReader reader = new NetDataReader();
+    private readonly NetDataReader reader = new();
 
     private bool stop = false;
 
@@ -25,7 +25,9 @@ public class UDPNetworkManager : UdpClient
         stop = true;
         Disconnect();
         while (IsConnected)
+        {
             Thread.Yield();
+        }
     }
 
     protected override void OnConnected()

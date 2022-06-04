@@ -20,12 +20,12 @@ public class DataUtils
     public static uint ScaleFloatToUInt(float lower, float upper, float value)
     {
         float step = Mathf.InverseLerp(lower, upper, value);
-        return (uint)Mathf.Lerp(0, 65535, value);
+        return (uint)Mathf.Lerp(0, 65535, step);
     }
     public static byte ScaleFloatToByte(float lower, float upper, float value)
     {
         float step = Mathf.InverseLerp(lower, upper, value);
-        return (byte)Mathf.Lerp(0, 255, value);
+        return (byte)Mathf.Lerp(0, 255, step);
     }
 
     public static float UnscaleUIntToFloat(float lower, float upper, uint value)

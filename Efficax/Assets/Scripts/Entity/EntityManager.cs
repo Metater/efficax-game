@@ -16,21 +16,21 @@ public class EntityManager : MonoBehaviour
 
     private void Awake()
     {
-        entities = new Dictionary<ulong, Entity>();
+        entities = new();
     }
 
-    public void UpdateEntity(EntityUpdateData data)
+    public void EntitySnapshot(EntitySnapshotData data)
     {
         Entity entity;
-        if (!entities.ContainsKey(data.id))
+        if (!entities.ContainsKey(data.Id))
         {
-            entity = Instantiate(entityPrefab, data.pos, Quaternion.identity, entitiesParent).GetComponent<Entity>();
-            entities.Add(data.id, entity);
+            entity = Instantiate(entityPrefab, data.Pos, Quaternion.identity, entitiesParent).GetComponent<Entity>();
+            entities.Add(data.Id, entity);
             entity.Init(gameManager);
         }
         else
         {
-            entity = entities[data.id];
+            entity = entities[data.Id];
         }
         entity.UpdateEnity(data);
     }

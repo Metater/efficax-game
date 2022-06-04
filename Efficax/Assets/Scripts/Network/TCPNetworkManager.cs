@@ -12,10 +12,10 @@ using System.Net;
 
 public class TCPNetworkManager : TcpClient
 {
-    private PacketManager packetManager;
+    private readonly PacketManager packetManager;
 
-    private Deque<byte> ringBuffer = new Deque<byte>();
-    private NetDataReader reader = new NetDataReader();
+    private readonly Deque<byte> ringBuffer = new();
+    private readonly NetDataReader reader = new();
 
     private bool stop = false;
 
@@ -69,6 +69,7 @@ public class TCPNetworkManager : TcpClient
                 dataRead += 2;
                 byte tickId = ringBuffer.RemoveFromFront();
                 dataRead += 1;
+
                 reader.SetSource(ringBufferData, dataRead, dataRead + packetSize);
                 while (reader.AvailableBytes > 0)
                 {

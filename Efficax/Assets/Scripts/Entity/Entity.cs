@@ -86,7 +86,7 @@ public class Entity : MonoBehaviour
         {
             if (lerpStart)
             {
-                print("Insufficient data to lerp, backing off!");
+                //print("Insufficient data to lerp, backing off!");
                 interpolationSweepDelayDecay = 1 - ((1 - interpolationSweepDelayDecay) / 4);
                 interpolationSweepDelay *= interpolationSweepDelayGrowth;
             }
@@ -120,7 +120,7 @@ public class Entity : MonoBehaviour
         // TODO think about out of order packets are treated, how does that wierd time effect lerping? yes
     }
 
-    public virtual void UpdateEnity(EntityUpdateData data)
+    public virtual void UpdateEnity(EntitySnapshotData data)
     {
         //if (UnityEngine.Random.Range(0, 100) < (1f / 25f) * 100f)
             //return;
@@ -129,7 +129,7 @@ public class Entity : MonoBehaviour
         {
             leadingTickValid = true;
             leadingTick = data.TickId;
-            transform.position = data.pos;
+            transform.position = data.Pos;
         }
         else
         {
@@ -146,6 +146,6 @@ public class Entity : MonoBehaviour
         // TODO DONT SAVE UPDATE IF SWEEP COULD HIT IT
         // CALCULATE TIME.TIME LATER
         // WILL NEED TO OFFSET LATER ^^^^ DONT TRUST TWO RATES ON DIFF COMPUTERS?
-        interpolationBuffer[data.TickId] = new Vector3(data.pos.x, data.pos.y, Time.time);
+        interpolationBuffer[data.TickId] = new Vector3(data.Pos.x, data.Pos.y, Time.time);
     }
 }

@@ -18,16 +18,6 @@ public class PacketManager : MonoBehaviour
         fixedUpdateQueue = new ConcurrentQueue<Action>();
     }
 
-    private void Start()
-    {
-        
-    }
-
-    private void Update()
-    {
-        
-    }
-
     public void ExecuteQueuedUpdates()
     {
         ExecuteActions(updateQueue);
@@ -41,25 +31,38 @@ public class PacketManager : MonoBehaviour
     public void Handle(NetDataReader reader, bool isTcp, byte tickId)
     {
         byte packetType = reader.GetByte();
-        switch (packetType)
+
+        if (isTcp)
         {
-            case 2:
-                HandleTickUpdate(reader, tickId);
-                break;
-            default:
-                print($"Unknown packet type: {packetType}");
-                break;
+            switch (packetType)
+            {
+                default:
+                    print($"TCP Unknown packet type: {packetType}");
+                    break;
+            }
+        }
+        else
+        {
+            switch (packetType)
+            {
+                case NetworkData.Snapshot:
+                    HandleSnapshot(reader, tickId);
+                    break;
+                default:
+                    print($"UDP Unknown packet type: {packetType}");
+                    break;
+            }
         }
     }
 
-    private void HandleTickUpdate(NetDataReader reader, byte tickId)
+    private void HandleSnapshot(NetDataReader reader, byte tickId)
     {
-        TickUpdateData data = new TickUpdateData().SetTickId(tickId).Read(reader);
+        SnapshotData data = new SnapshotData().Read(reader, tickId);
 
         updateQueue.Enqueue(() => {
-            foreach (EntityUpdateData entityUpdate in data.entityUpdates)
+            foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
             {
-                gameManager.entityManager.UpdateEntity(entityUpdate);
+                gameManager.entityManager.EntitySnapshot(entityUpdate);
             }
         });
     }

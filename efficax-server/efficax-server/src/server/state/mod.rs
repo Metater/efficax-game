@@ -7,7 +7,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use metaitus::{zone::MetaitusZone, collider::MetaitusCollider};
 
-use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntitySnapshotData, SnapshotData, NetworkData, InputData, types::PositionData}};
+use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntitySnapshotData, SnapshotData, NetworkData, InputData, types::PositionData, EntitySpecificSnapshotData, PlayerSnapshotData}};
 
 use self::client_state::ClientState;
 
@@ -75,25 +75,29 @@ impl ServerState {
             return
         }
 
-        let mut entity_updates = Vec::new();
+        let mut entity_snapshots = Vec::new();
 
         for player in self.clients.values() {
             if let Some(entity) = self.zone.entities.get(&player.id) {
                 // Every time bc udp is unreliable
                 //if entity.last_moved_on_tick == self.tick_id || entity.last_moved_on_tick == 0 {
-                let update = EntitySnapshotData {
+                let snapshot = EntitySnapshotData {
                     id: entity.id,
                     pos: PositionData::new(entity.pos),
-                    input_sequence: player.input_sequence,
+                    data: EntitySpecificSnapshotData::Player({
+                        PlayerSnapshotData {
+                            input_sequence: player.input_sequence
+                        }
+                    })
                 };
-                entity_updates.push(update);
+                entity_snapshots.push(snapshot);
                 //}
             }
         }
 
         let addrs: Vec<SocketAddr> = self.clients.keys().copied().collect();
-        self.net.multicast(false, addrs, self.get_tick_id_u8(), NetworkData::TickUpdate(SnapshotData {
-            entity_snapshots: entity_updates
+        self.net.multicast(false, addrs, self.get_tick_id_u8(), NetworkData::Snapshot(SnapshotData {
+            entity_snapshots
         }));
     }
 }

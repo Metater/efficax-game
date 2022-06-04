@@ -14,27 +14,19 @@ public class GameManager : MonoBehaviour
     public UDPNetworkManager udp;
 
     public ulong ClientTick { get; private set; } = 0;
+    public bool SentUDPPort { get; private set; } = false;
 
-    private byte offInput = 0;
+    private byte oddInput = 0;
     private byte inputSequence = 0;
-
-    private bool sentUDPPort = false;
-
-    [SerializeField] private GameObject test;
-
-    private void Awake()
-    {
-
-    }
 
     private void Start()
     {
         print("Client connecting...");
 
-        tcp = new TCPNetworkManager(packetManager, "75.0.193.55", 25569);
+        tcp = new TCPNetworkManager(packetManager, "127.0.0.1", 8080);
         tcp.ConnectAsync();
 
-        udp = new UDPNetworkManager(packetManager, "75.0.193.55", 25569);
+        udp = new UDPNetworkManager(packetManager, "127.0.0.1", 8080);
         udp.Connect();
     }
 
@@ -50,9 +42,9 @@ public class GameManager : MonoBehaviour
         if (!tcp.IsConnected || !udp.IsConnected)
             return;
 
-        if (!sentUDPPort)
+        if (!SentUDPPort)
         {
-            sentUDPPort = true;
+            SentUDPPort = true;
             ushort port = (ushort)(udp.Socket.LocalEndPoint as IPEndPoint).Port;
             tcp.SendAsync(new byte[] { 3, 0, 3, (byte)port, (byte)(port >> 8) });
         }
@@ -63,14 +55,14 @@ public class GameManager : MonoBehaviour
 
             if (input == 0)
             {
-                input = offInput;
+                input = oddInput;
             }
 
             udp.SendAsync(new byte[] { 0, input, inputSequence++ });
         }
         else
         {
-            offInput = GetInput();
+            oddInput = GetInput();
         }
         ClientTick++;
     }

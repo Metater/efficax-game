@@ -6,6 +6,5 @@ using System.Threading.Tasks;
 
 public interface IReadData<T>
 {
-    public T Read(NetDataReader reader);
-    public T SetTickId(byte tickId);
+    public T Read(NetDataReader reader, byte tickId);
 }
