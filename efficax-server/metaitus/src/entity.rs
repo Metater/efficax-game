@@ -104,6 +104,10 @@ impl MetaitusEntity {
         self.vel += force * delta_time;
     }
 
+    pub fn teleport_unchecked(&mut self, pos: Vector2<f32>) {
+        self.pos = pos;
+    }
+
     pub fn tick(&mut self, tick_id: u64, delta_time: f32, near_statics: &Vec<MetaitusCollider>) -> bool {
         self.moved_xy = false;
         
@@ -166,7 +170,7 @@ impl MetaitusEntity {
         let mut move_x = !self.vel.x.is_zero();
         let mut move_y = !self.vel.y.is_zero();
 
-        if !xy_collider.intersects(&self.bounds) {
+        if self.has_bounds && !xy_collider.intersects(&self.bounds) {
             if move_x && !x_collider.intersects(&self.bounds) {
                 move_x = false;
             }

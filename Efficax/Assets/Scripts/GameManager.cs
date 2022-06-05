@@ -80,5 +80,11 @@ public class GameManager : MonoBehaviour
     {
         tcp.DisconnectAndStop();
         udp.DisconnectAndStop();
+
+        ClientTick = 0;
+        SentUDPPort = false;
+
+        oddInput = 0;
+        inputSequence = 0;
     }
 }

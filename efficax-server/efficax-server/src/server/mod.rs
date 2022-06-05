@@ -90,8 +90,13 @@ impl EfficaxServer {
     }
 
     pub fn run(&mut self) {
+        self.init();
         self.main_loop();
         println!("[server]: stopped after: {:?} and on tick: {}", self.start_time.elapsed(), self.state.tick_id);
+    }
+
+    fn init(&mut self) {
+        self.state.init();
     }
 
     fn main_loop(&mut self) {

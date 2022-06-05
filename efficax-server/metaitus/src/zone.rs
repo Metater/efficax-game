@@ -53,18 +53,7 @@ impl MetaitusZone {
             entity.add_force(*repulsion_vector, delta_time);
             let moved_xy = entity.tick(tick_id, delta_time, &near_statics);
             if moved_xy {
-                // switch entity cell if entity moved cells
-                let last_cell_index = entity.current_cell_index;
-                entity.current_cell_index = Self::get_index_at_pos(entity.pos);
-                if last_cell_index != entity.current_cell_index {
-                    let last_cell = self.cells.get_mut(&last_cell_index).unwrap();
-                    last_cell.retain(|&id| id != entity.id);
-                    if last_cell.len() == 0 {
-                        self.cells.remove(&last_cell_index);
-                    }
-                    let current_cell = self.cells.entry(entity.current_cell_index).or_insert_with(Vec::new);
-                    current_cell.push(entity.id);
-                }
+                Self::update_cell_if_needed(entity, &mut self.cells);
             }
         }
     }
@@ -131,6 +120,22 @@ impl MetaitusZone {
         cell_indicies.push((index + Self::DIMENSION_CELL_LENGTH) + 1);
         cell_indicies.push((index + Self::DIMENSION_CELL_LENGTH) - 1);
         cell_indicies
+    }
+}
+
+impl MetaitusZone {
+    fn update_cell_if_needed(entity: &mut MetaitusEntity, cells: &mut HashMap<u32, Vec<u64>>) {
+        let last_cell_index = entity.current_cell_index;
+        entity.current_cell_index = Self::get_index_at_pos(entity.pos);
+        if last_cell_index != entity.current_cell_index {
+            let last_cell = cells.get_mut(&last_cell_index).unwrap();
+            last_cell.retain(|&id| id != entity.id);
+            if last_cell.len() == 0 {
+                cells.remove(&last_cell_index);
+            }
+            let current_cell = cells.entry(entity.current_cell_index).or_insert_with(Vec::new);
+            current_cell.push(entity.id);
+        }
     }
 }
 

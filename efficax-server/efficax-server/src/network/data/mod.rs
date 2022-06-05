@@ -57,8 +57,8 @@ pub enum NetworkData {
     Chat(ChatData),
     Snapshot(SnapshotData),
     InitUDP(u16),
-    Join(JoinData),
-    Leave(LeaveData),
+    //Join(JoinData),
+    //Leave(LeaveData),
 }
 
 // Input
