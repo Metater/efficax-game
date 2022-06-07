@@ -3,6 +3,8 @@ use self::types::PositionData;
 pub mod types;
 pub mod impls;
 
+// If you want to free up enums, route by tcp/udp, client/server
+
 /* efficax-game schema
 
 S->C:
@@ -51,14 +53,23 @@ Shared:
         y: u16
 */
 
+pub const INPUT: u8 = 0;
+pub const CHAT: u8 = 1;
+pub const SNAPSHOT: u8 = 2;
+pub const INIT_UDP: u8 = 3;
+pub const JOIN: u8 = 4;
+pub const SPAWN: u8 = 5;
+pub const DESPAWN: u8 = 6;
+
 #[derive(Debug)]
 pub enum NetworkData {
     Input(InputData),
     Chat(ChatData),
     Snapshot(SnapshotData),
     InitUDP(u16),
-    //Join(JoinData),
-    //Leave(LeaveData),
+    Join(JoinData),
+    Spawn(SpawnData),
+    Despawn(DespawnData),
 }
 
 // Input
@@ -89,7 +100,6 @@ pub struct EntitySnapshotData {
 
 #[derive(Debug)]
 pub enum EntitySpecificSnapshotData {
-    // input_sequence
     Player(PlayerSnapshotData)
 }
 
@@ -101,11 +111,23 @@ pub struct PlayerSnapshotData {
 // Join
 #[derive(bincode::Encode, Debug)]
 pub struct JoinData {
-
+    pub player_id: u64
 }
 
 // Leave
 #[derive(bincode::Encode, Debug)]
 pub struct LeaveData {
 
+}
+
+// Spawn
+#[derive(bincode::Encode, Debug)]
+pub struct SpawnData {
+    pub entity_id: u64
+}
+
+// Despawn
+#[derive(bincode::Encode, Debug)]
+pub struct DespawnData {
+    pub entity_id: u64
 }

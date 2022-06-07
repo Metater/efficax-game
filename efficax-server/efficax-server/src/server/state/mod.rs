@@ -1,4 +1,5 @@
 pub mod client_state;
+pub mod physics;
 
 use std::{net::SocketAddr, collections::HashMap};
 
@@ -7,7 +8,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use metaitus::{zone::MetaitusZone, collider::MetaitusCollider, entity::MetaitusEntity};
 
-use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntitySnapshotData, SnapshotData, NetworkData, InputData, types::PositionData, EntitySpecificSnapshotData, PlayerSnapshotData}};
+use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntitySnapshotData, SnapshotData, NetworkData, InputData, types::PositionData, EntitySpecificSnapshotData, PlayerSnapshotData, JoinData}};
 
 use self::client_state::ClientState;
 
@@ -19,13 +20,9 @@ pub struct ServerState {
     zone: MetaitusZone,
 
     net: NetworkSenderHandle,
-
-    npc: u64
 }
 
 impl ServerState {
-    const PHYSICS_SUBSTEPS: i32 = 8;
-
     pub fn new(sender_tx: UnboundedSender<NetworkSenderMessage>) -> Self {
         ServerState {
             tick_id: 0,
@@ -35,15 +32,11 @@ impl ServerState {
             zone: MetaitusZone::new(),
 
             net: NetworkSenderHandle::new(sender_tx),
-
-            npc: 0
         }
     }
 
     pub fn init(&mut self) {
-        let npc_entity = self.zone.spawn_entity(Vector2::zero())
-            .with_drag(false, 0f32);
-        self.npc = npc_entity.id;
+
     }
 
     pub fn tick(&mut self, delta_time: f32) {
@@ -53,13 +46,6 @@ impl ServerState {
         let step_delta_time = delta_time / ServerState::PHYSICS_SUBSTEPS as f32;
         for i in 0..ServerState::PHYSICS_SUBSTEPS {
             self.update_clients(step_delta_time);
-            // NPC movement
-            {
-                let time = ((self.tick_id as f64 * 0.04) + ((i as f64) * (step_delta_time as f64))) * 2.0;
-                let npc_entity = self.zone.entities.get_mut(&self.npc).unwrap();
-                let target_pos = Vector2::new(time.cos() as f32 * 4f32, time.sin() as f32 * 4f32);
-                npc_entity.teleport_unchecked(target_pos);
-            }
             self.zone.tick(self.tick_id, step_delta_time);
         }
 
@@ -100,8 +86,6 @@ impl ServerState {
             }
         }
 
-        Self::add_snapshot(&mut entity_snapshots, self.zone.entities.get(&self.npc).unwrap(), 0);
-
         let addrs: Vec<SocketAddr> = self.clients.keys().copied().collect();
         self.net.multicast(false, addrs, self.get_tick_id_u8(), NetworkData::Snapshot(SnapshotData {
             entity_snapshots
@@ -131,8 +115,14 @@ impl ServerState {
         .with_drag(true, 5.0)
         .with_collider(true, MetaitusCollider::new(Vector2::new(-0.475, -0.475), Vector2::new(0.475, 0.475)))
         .with_repulsion_radius(true, 0.4, 48.0, 3.0);
-
+        
         self.clients.insert(addr, ClientState::new(entity.id));
+
+        // Send join packet
+        let data = NetworkData::Join(JoinData {
+            player_id: entity.id
+        });
+        self.net.unicast(true, addr, self.get_tick_id_u8(), data);
     }
     pub fn leave(&mut self, addr: SocketAddr) {
         if let Some(client) = self.clients.remove(&addr) {

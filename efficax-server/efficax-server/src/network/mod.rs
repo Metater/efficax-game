@@ -59,7 +59,7 @@ impl NetworkSenderHandle {
         Self::new(self.sender_tx.clone())
     }
 
-    pub fn _unicast(&self, is_tcp: bool, addr: SocketAddr, tick_id: u8, data: NetworkData) {
+    pub fn unicast(&self, is_tcp: bool, addr: SocketAddr, tick_id: u8, data: NetworkData) {
         self.send(NetworkPacket::unicast(is_tcp, addr, tick_id, data));
     }
 

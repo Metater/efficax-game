@@ -7,7 +7,7 @@ using UnityEngine;
 
 public class PacketManager : MonoBehaviour
 {
-    public GameManager gameManager;
+    [SerializeField] private GameManager gameManager;
 
     private ConcurrentQueue<Action> updateQueue;
     private ConcurrentQueue<Action> fixedUpdateQueue;
@@ -36,6 +36,9 @@ public class PacketManager : MonoBehaviour
         {
             switch (packetType)
             {
+                case NetworkData.Join:
+                    HandleJoin(reader, tickId);
+                    break;
                 default:
                     print($"TCP Unknown packet type: {packetType}");
                     break;
@@ -55,11 +58,22 @@ public class PacketManager : MonoBehaviour
         }
     }
 
+    private void HandleJoin(NetDataReader reader, byte tickId)
+    {
+        JoinData data = new JoinData().Read(reader, tickId);
+
+        updateQueue.Enqueue(() =>
+        {
+            gameManager.playerManager.SetPlayerId(data.PlayerId);
+        });
+    }
+
     private void HandleSnapshot(NetDataReader reader, byte tickId)
     {
         SnapshotData data = new SnapshotData().Read(reader, tickId);
 
-        updateQueue.Enqueue(() => {
+        updateQueue.Enqueue(() =>
+        {
             foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
             {
                 gameManager.entityManager.EntitySnapshot(entityUpdate);

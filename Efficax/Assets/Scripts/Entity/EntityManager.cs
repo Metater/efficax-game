@@ -7,7 +7,7 @@ using UnityEngine;
 
 public class EntityManager : MonoBehaviour
 {
-    public GameManager gameManager;
+    [SerializeField] private GameManager gameManager;
 
     [SerializeField] private Transform entitiesParent;
     [SerializeField] private GameObject entityPrefab;
@@ -17,6 +17,23 @@ public class EntityManager : MonoBehaviour
     private void Awake()
     {
         entities = new();
+    }
+
+    private void Update()
+    {
+        if (gameManager.IsDisconnected)
+        {
+            foreach ((ulong _, Entity entity) in entities)
+            {
+                Destroy(entity.gameObject);
+            }
+            entities.Clear();
+        }
+    }
+
+    public Entity GetEntity(ulong entityId)
+    {
+        return entities[entityId];
     }
 
     public void EntitySnapshot(EntitySnapshotData data)

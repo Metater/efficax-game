@@ -9,12 +9,15 @@ public class GameManager : MonoBehaviour
     public WorldManager worldManager;
     public EntityManager entityManager;
     public PacketManager packetManager;
+    public PlayerManager playerManager;
 
     public TCPNetworkManager tcp;
     public UDPNetworkManager udp;
 
+    public bool IsDisconnected => !tcp.IsConnected || !udp.IsConnected;
+
     public ulong ClientTick { get; private set; } = 0;
-    public bool SentUDPPort { get; private set; } = false;
+    public bool HasInitUDP { get; private set; } = false;
 
     private byte oddInput = 0;
     private byte inputSequence = 0;
@@ -39,12 +42,15 @@ public class GameManager : MonoBehaviour
     {
         packetManager.ExecuteQueuedFixedUpdates();
 
-        if (!tcp.IsConnected || !udp.IsConnected)
-            return;
-
-        if (!SentUDPPort)
+        if (IsDisconnected)
         {
-            SentUDPPort = true;
+            ResetState();
+            return;
+        }
+
+        if (!HasInitUDP)
+        {
+            HasInitUDP = true;
             ushort port = (ushort)(udp.Socket.LocalEndPoint as IPEndPoint).Port;
             tcp.SendAsync(new byte[] { 3, 0, 3, (byte)port, (byte)(port >> 8) });
         }
@@ -52,12 +58,10 @@ public class GameManager : MonoBehaviour
         if (ClientTick % 2 == 0)
         {
             byte input = GetInput();
-
             if (input == 0)
             {
                 input = oddInput;
             }
-
             udp.SendAsync(new byte[] { 0, input, inputSequence++ });
         }
         else
@@ -81,8 +85,13 @@ public class GameManager : MonoBehaviour
         tcp.DisconnectAndStop();
         udp.DisconnectAndStop();
 
+        ResetState();
+    }
+
+    private void ResetState()
+    {
         ClientTick = 0;
-        SentUDPPort = false;
+        HasInitUDP = false;
 
         oddInput = 0;
         inputSequence = 0;

@@ -7,7 +7,7 @@ using UnityEngine;
 
 public class WorldManager : MonoBehaviour
 {
-    public GameManager gameManager;
+    [SerializeField] private GameManager gameManager;
 
     private void Start()
     {
