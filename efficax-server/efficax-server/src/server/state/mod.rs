@@ -42,14 +42,11 @@ impl ServerState {
     pub fn tick(&mut self, delta_time: f32) {
         //println!("[server state]: tick: {}", self.tick_id);
 
-        // later optimize by only doing lookups for entities once per tick
-        let step_delta_time = delta_time / ServerState::PHYSICS_SUBSTEPS as f32;
-        for i in 0..ServerState::PHYSICS_SUBSTEPS {
-            self.update_clients(step_delta_time);
-            self.zone.tick(self.tick_id, step_delta_time);
-        }
+        self.tick_physics();
 
-        self.send_client_updates();
+        // later optimize by only doing lookups for entities once per tick
+
+        self.send_client_updates(delta_time);
 
         self.tick_id += 1;
     }

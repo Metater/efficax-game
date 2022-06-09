@@ -1,0 +1,17 @@
+[0]
+name=Mux
+r=@Variant(\0\0\0\x86\x87)
+g=@Variant(\0\0\0\x86\x82)
+b=@Variant(\0\0\0\x86~)
+
+[1]
+name=Mux Light
+r=@Variant(\0\0\0\x86\x9c)
+g=@Variant(\0\0\0\x86\x98)
+b=@Variant(\0\0\0\x86\x94)
+
+[2]
+name=Mux Dark
+r=@Variant(\0\0\0\x86r)
+g=@Variant(\0\0\0\x86o)
+b=@Variant(\0\0\0\x86l)
