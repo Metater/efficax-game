@@ -12,6 +12,42 @@ b=@Variant(\0\0\0\x86\x94)
 
 [2]
 name=Mux Dark
-r=@Variant(\0\0\0\x86r)
-g=@Variant(\0\0\0\x86o)
-b=@Variant(\0\0\0\x86l)
+r=@Variant(\0\0\0\x86z)
+g=@Variant(\0\0\0\x86w)
+b=@Variant(\0\0\0\x86s)
+
+[3]
+name=Lux
+r=@Variant(\0\0\0\x86\x80)
+g=@Variant(\0\0\0\x86\xa2)
+b=@Variant(\0\0\0\x86\xac)
+
+[4]
+name=Lux Light
+r=@Variant(\0\0\0\x86\x9a)
+g=@Variant(\0\0\0\x86\xa9)
+b=@Variant(\0\0\0\x86\xae)
+
+[5]
+name=Lux Dark
+r=@Variant(\0\0\0\x86m)
+g=@Variant(\0\0\0\x86\x81)
+b=@Variant(\0\0\0\x86\x87)
+
+[6]
+name=Demux
+r=@Variant(\0\0\0\x86\x45)
+g=@Variant(\0\0\0\x86\x43)
+b=@Variant(\0\0\0\x86\x42)
+
+[7]
+name=Demux Light
+r=@Variant(\0\0\0\x86Z)
+g=@Variant(\0\0\0\x86W)
+b=@Variant(\0\0\0\x86U)
+
+[8]
+name=Demux Dark
+r=@Variant(\0\0\0\x86\x37)
+g=@Variant(\0\0\0\x86\x35)
+b=@Variant(\0\0\0\x86\x35)
