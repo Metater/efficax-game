@@ -1,5 +1,6 @@
 pub mod client_state;
 pub mod physics;
+pub mod network;
 
 use std::{net::SocketAddr, collections::HashMap};
 
@@ -42,11 +43,11 @@ impl ServerState {
     pub fn tick(&mut self, delta_time: f32) {
         //println!("[server state]: tick: {}", self.tick_id);
 
-        self.tick_physics();
+        self.tick_physics(delta_time);
 
         // later optimize by only doing lookups for entities once per tick
 
-        self.send_client_updates(delta_time);
+        self.send_client_updates();
 
         self.tick_id += 1;
     }
