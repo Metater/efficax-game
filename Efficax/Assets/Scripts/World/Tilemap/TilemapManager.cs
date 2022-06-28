@@ -17,7 +17,7 @@ public class TilemapManager : MonoBehaviour
                 for (int x = 0; x < tilemap.GetLength(0); x++)
                 {
                     int index = x + y;
-                    TileSprite sprite = index % 2 == 0 ? TileSprites.Dirt : TileSprites.Dirt;
+                    TileSprite sprite = index % 2 == 0 ? TileSprites.Grass : TileSprites.Dirt;
                     StaticTile tile = new(this, new Vector3Int(x, y, z), Orientation.Up, sprite);
                     Set(tile);
                 }

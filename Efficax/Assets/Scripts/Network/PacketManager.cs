@@ -9,23 +9,42 @@ public class PacketManager : MonoBehaviour
 {
     [SerializeField] private GameManager gameManager;
 
-    private ConcurrentQueue<Action> updateQueue;
-    private ConcurrentQueue<Action> fixedUpdateQueue;
+    public ConcurrentQueue<Action> UpdateQueue { get; private set; }
+    public ConcurrentQueue<Action> FixedUpdateQueue { get; private set; }
+
+    private PacketHandler[] tcpHandlers;
+    private PacketHandler[] udpHandlers;
 
     private void Awake()
     {
-        updateQueue = new ConcurrentQueue<Action>();
-        fixedUpdateQueue = new ConcurrentQueue<Action>();
+        UpdateQueue = new ConcurrentQueue<Action>();
+        FixedUpdateQueue = new ConcurrentQueue<Action>();
+
+        tcpHandlers = new PacketHandler[256];
+        udpHandlers = new PacketHandler[256];
+
+        tcpHandlers[NetworkData.Join] = PacketHandler.Create(this, PacketHandlerType.Update, (JoinData data) =>
+        {
+            gameManager.playerManager.SetPlayerId(data.PlayerId);
+        });
+
+        udpHandlers[NetworkData.Snapshot] = PacketHandler.Create(this, PacketHandlerType.Update, (SnapshotData data) =>
+        {
+            foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
+            {
+                gameManager.entityManager.EntitySnapshot(entityUpdate);
+            }
+        });
     }
 
     public void ExecuteQueuedUpdates()
     {
-        ExecuteActions(updateQueue);
+        ExecuteActions(UpdateQueue);
     }
 
     public void ExecuteQueuedFixedUpdates()
     {
-        ExecuteActions(fixedUpdateQueue);
+        ExecuteActions(FixedUpdateQueue);
     }
 
     public void Handle(NetDataReader reader, bool isTcp, byte tickId)
@@ -34,51 +53,28 @@ public class PacketManager : MonoBehaviour
 
         if (isTcp)
         {
-            switch (packetType)
+            var handler = tcpHandlers[packetType];
+            if (handler is not null)
             {
-                case NetworkData.Join:
-                    HandleJoin(reader, tickId);
-                    break;
-                default:
-                    print($"TCP Unknown packet type: {packetType}");
-                    break;
+                handler.Handle(reader, tickId);
+            }
+            else
+            {
+                print($"TCP Unknown packet type: {packetType}");
             }
         }
         else
         {
-            switch (packetType)
+            var handler = udpHandlers[packetType];
+            if (handler is not null)
             {
-                case NetworkData.Snapshot:
-                    HandleSnapshot(reader, tickId);
-                    break;
-                default:
-                    print($"UDP Unknown packet type: {packetType}");
-                    break;
+                handler.Handle(reader, tickId);
+            }
+            else
+            {
+                print($"UDP Unknown packet type: {packetType}");
             }
         }
-    }
-
-    private void HandleJoin(NetDataReader reader, byte tickId)
-    {
-        JoinData data = new JoinData().Read(reader, tickId);
-
-        updateQueue.Enqueue(() =>
-        {
-            gameManager.playerManager.SetPlayerId(data.PlayerId);
-        });
-    }
-
-    private void HandleSnapshot(NetDataReader reader, byte tickId)
-    {
-        SnapshotData data = new SnapshotData().Read(reader, tickId);
-
-        updateQueue.Enqueue(() =>
-        {
-            foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
-            {
-                gameManager.entityManager.EntitySnapshot(entityUpdate);
-            }
-        });
     }
 
     private static void ExecuteActions(ConcurrentQueue<Action> actions)

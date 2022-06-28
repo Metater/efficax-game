@@ -111,7 +111,8 @@ pub struct PlayerSnapshotData {
 // Join
 #[derive(bincode::Encode, Debug)]
 pub struct JoinData {
-    pub player_id: u64
+    //pub entity_snapshot: EntitySnapshotData,
+    pub player_id: u64,
 }
 
 // Leave

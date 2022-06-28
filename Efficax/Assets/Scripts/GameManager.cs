@@ -22,6 +22,11 @@ public class GameManager : MonoBehaviour
     private byte oddInput = 0;
     private byte inputSequence = 0;
 
+    private void Awake()
+    {
+        
+    }
+
     private void Start()
     {
         print("Client connecting...");

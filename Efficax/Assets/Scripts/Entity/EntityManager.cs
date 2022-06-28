@@ -31,9 +31,9 @@ public class EntityManager : MonoBehaviour
         }
     }
 
-    public Entity GetEntity(ulong entityId)
+    public bool TryGetEntity(ulong entityId, out Entity entity)
     {
-        return entities[entityId];
+        return entities.TryGetValue(entityId, out entity);
     }
 
     public void EntitySnapshot(EntitySnapshotData data)

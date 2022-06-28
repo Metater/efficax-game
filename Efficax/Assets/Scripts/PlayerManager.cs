@@ -23,11 +23,12 @@ public class PlayerManager : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (IsPlayerIdSet)
+        // TryGet bc there may be gap between join packet setting player id, and the player being spawned in
+        if (IsPlayerIdSet && gameManager.entityManager.TryGetEntity(PlayerId, out Entity entity))
         {
-            Transform player = gameManager.entityManager.GetEntity(PlayerId).transform;
+            Transform player = entity.transform;
             Transform camera = Camera.main.transform;
-            Vector2 output = Vector2.SmoothDamp(camera.position, player.position, ref cameraFollowVelocity, cameraFollowSmoothTime);
+            Vector2 output = Vector2.SmoothDamp(camera.position, player.position, ref cameraFollowVelocity, cameraFollowSmoothTime * Time.deltaTime);
             camera.position = new Vector3(output.x, output.y, camera.position.z);
         }
     }

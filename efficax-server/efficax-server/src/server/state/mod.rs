@@ -109,7 +109,7 @@ impl ServerState {
         let entity = self.zone.spawn_entity(Vector2::zero());
         
         entity
-        .with_bounds(true, MetaitusCollider::new(Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
+        .with_bounds(false, MetaitusCollider::new(Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
         .with_drag(true, 5.0)
         .with_collider(true, MetaitusCollider::new(Vector2::new(-0.475, -0.475), Vector2::new(0.475, 0.475)))
         .with_repulsion_radius(true, 0.4, 48.0, 3.0);
