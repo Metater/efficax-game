@@ -4,9 +4,8 @@ using UnityEngine;
 
 public class PlayerManager : MonoBehaviour
 {
-    [SerializeField] private GameManager gameManager;
-
     [SerializeField] private float cameraFollowSmoothTime;
+    [SerializeField] private float cameraFollowMaxSpeed;
 
     public bool IsPlayerIdSet { get; private set; } = false;
     public ulong PlayerId { get; private set; }
@@ -15,7 +14,7 @@ public class PlayerManager : MonoBehaviour
 
     private void Update()
     {
-        if (gameManager.IsDisconnected)
+        if (GameManager.I.IsDisconnected)
         {
             IsPlayerIdSet = false;
         }
@@ -24,11 +23,11 @@ public class PlayerManager : MonoBehaviour
     private void LateUpdate()
     {
         // TryGet bc there may be gap between join packet setting player id, and the player being spawned in
-        if (IsPlayerIdSet && gameManager.entityManager.TryGetEntity(PlayerId, out Entity entity))
+        if (IsPlayerIdSet && GameManager.I.entityManager.TryGetEntity(PlayerId, out Entity entity))
         {
             Transform player = entity.transform;
             Transform camera = Camera.main.transform;
-            Vector2 output = Vector2.SmoothDamp(camera.position, player.position, ref cameraFollowVelocity, cameraFollowSmoothTime * Time.deltaTime);
+            Vector2 output = Vector2.SmoothDamp(camera.position, player.position, ref cameraFollowVelocity, cameraFollowSmoothTime, cameraFollowMaxSpeed);
             camera.position = new Vector3(output.x, output.y, camera.position.z);
         }
     }

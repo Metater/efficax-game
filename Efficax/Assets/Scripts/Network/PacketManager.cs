@@ -7,8 +7,6 @@ using UnityEngine;
 
 public class PacketManager : MonoBehaviour
 {
-    [SerializeField] private GameManager gameManager;
-
     public ConcurrentQueue<Action> UpdateQueue { get; private set; }
     public ConcurrentQueue<Action> FixedUpdateQueue { get; private set; }
 
@@ -25,14 +23,14 @@ public class PacketManager : MonoBehaviour
 
         tcpHandlers[NetworkData.Join] = PacketHandler.Create(this, PacketHandlerType.Update, (JoinData data) =>
         {
-            gameManager.playerManager.SetPlayerId(data.PlayerId);
+            GameManager.I.playerManager.SetPlayerId(data.PlayerId);
         });
 
         udpHandlers[NetworkData.Snapshot] = PacketHandler.Create(this, PacketHandlerType.Update, (SnapshotData data) =>
         {
             foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
             {
-                gameManager.entityManager.EntitySnapshot(entityUpdate);
+                GameManager.I.entityManager.EntitySnapshot(entityUpdate);
             }
         });
     }

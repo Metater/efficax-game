@@ -7,8 +7,6 @@ using UnityEngine;
 
 public class WorldManager : MonoBehaviour
 {
-    [SerializeField] private GameManager gameManager;
-
     private void Start()
     {
 

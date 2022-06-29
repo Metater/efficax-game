@@ -652,7 +652,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ca5eccc59f5d45449a044d0a95904ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameManager: {fileID: 1277084299}
 --- !u!114 &1277084301
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -665,7 +664,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1463a9bf3ffbf2649b7cf6eefdfed7e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameManager: {fileID: 1277084299}
   entitiesParent: {fileID: 1963906678}
   entityPrefab: {fileID: 7642203330335510490, guid: b9bdfc82760344f4ead85df9552f1a6e, type: 3}
 --- !u!114 &1277084302
@@ -680,7 +678,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ed8912cb40a26347ba7d9ab1e4b0ba1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameManager: {fileID: 1277084299}
 --- !u!114 &1277084303
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -693,8 +690,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: acad446258de65241a2e209954f93ff2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameManager: {fileID: 1277084299}
   cameraFollowSmoothTime: 0.3
+  cameraFollowMaxSpeed: 12
 --- !u!1 &1489619804
 GameObject:
   m_ObjectHideFlags: 0

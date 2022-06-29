@@ -15,8 +15,6 @@ public class Entity : MonoBehaviour
 
     [SerializeField] private float rotationAverageWindowTime;
 
-    private GameManager gameManager;
-
     private bool leadingTickValid = false;
     private byte leadingTick = 0;
 
@@ -24,9 +22,9 @@ public class Entity : MonoBehaviour
     private Vector3[] interpolationBuffer;
     private Queue<Vector2> rotationAverageWindow;
 
-    public void Init(GameManager gameManager)
+    public void Init()
     {
-        this.gameManager = gameManager;
+
     }
 
     private void Awake()

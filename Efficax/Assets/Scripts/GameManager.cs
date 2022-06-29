@@ -6,6 +6,24 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    #region Singleton
+    private static GameManager instance;
+    public static GameManager I { get { return instance; } }
+    private void AwakeSingleton()
+    {
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+        //DontDestroyOnLoad(gameObject);
+    }
+    #endregion Singleton
+
     public WorldManager worldManager;
     public EntityManager entityManager;
     public PacketManager packetManager;
@@ -24,7 +42,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        
+        AwakeSingleton();
     }
 
     private void Start()

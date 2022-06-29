@@ -7,8 +7,6 @@ using UnityEngine;
 
 public class EntityManager : MonoBehaviour
 {
-    [SerializeField] private GameManager gameManager;
-
     [SerializeField] private Transform entitiesParent;
     [SerializeField] private GameObject entityPrefab;
 
@@ -21,7 +19,7 @@ public class EntityManager : MonoBehaviour
 
     private void Update()
     {
-        if (gameManager.IsDisconnected)
+        if (GameManager.I.IsDisconnected)
         {
             foreach ((ulong _, Entity entity) in entities)
             {
@@ -43,7 +41,7 @@ public class EntityManager : MonoBehaviour
         {
             entity = Instantiate(entityPrefab, data.Pos, Quaternion.identity, entitiesParent).GetComponent<Entity>();
             entities.Add(data.Id, entity);
-            entity.Init(gameManager);
+            entity.Init();
         }
         else
         {
