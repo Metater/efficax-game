@@ -45,6 +45,7 @@ NetworkData: (1 + n bytes)
     3 InitUDP: (TCP C->S) (2 bytes)
         udp_port: u16
     4 Join: (TCP S->C)
+        
     5 Leave: (TCP S->C)
 
 Shared:
@@ -111,8 +112,8 @@ pub struct PlayerSnapshotData {
 // Join
 #[derive(bincode::Encode, Debug)]
 pub struct JoinData {
-    //pub entity_snapshot: EntitySnapshotData,
     pub player_id: u64,
+    pub pos: PositionData
 }
 
 // Leave

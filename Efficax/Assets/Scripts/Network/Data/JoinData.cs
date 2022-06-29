@@ -2,15 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class JoinData : NetworkData, IReadData<JoinData>
+public class JoinData : NetworkData<JoinData>
 {
     public ulong PlayerId { get; private set; }
+    public Vector2 Pos { get; private set; }
 
-    public JoinData Read(NetDataReader reader, byte tickId)
+    public override JoinData Read(NetDataReader reader)
     {
-        TickId = tickId;
-
         PlayerId = reader.GetULong();
+        Pos = DataUtils.ReadPos(reader);
 
         return this;
     }

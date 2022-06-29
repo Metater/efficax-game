@@ -118,7 +118,8 @@ impl ServerState {
 
         // Send join packet
         let data = NetworkData::Join(JoinData {
-            player_id: entity.id
+            player_id: entity.id,
+            pos: PositionData::new(entity.pos)
         });
         self.net.unicast(true, addr, self.get_tick_id_u8(), data);
     }

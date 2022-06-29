@@ -9,11 +9,11 @@ public class PacketHandler
         this.packetHandler = packetHandler;
     }
 
-    public static PacketHandler Create<T>(PacketManager packetManager, PacketHandlerType handlerType, Action<T> handler) where T : IReadData<T>, new()
+    public static PacketHandler Create<T>(PacketManager packetManager, PacketHandlerType handlerType, Action<T> handler) where T : NetworkData<T>, new()
     {
         void PacketHandler(NetDataReader reader, byte tickId)
         {
-            T data = new T().Read(reader, tickId);
+            T data = new T().SetTickIdAndRead(reader, tickId);
             switch (handlerType)
             {
                 case PacketHandlerType.Default:

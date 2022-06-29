@@ -21,12 +21,12 @@ public class PacketManager : MonoBehaviour
         tcpHandlers = new PacketHandler[256];
         udpHandlers = new PacketHandler[256];
 
-        tcpHandlers[NetworkData.Join] = PacketHandler.Create(this, PacketHandlerType.Update, (JoinData data) =>
+        tcpHandlers[Network.Join] = PacketHandler.Create(this, PacketHandlerType.Update, (JoinData data) =>
         {
             GameManager.I.playerManager.SetPlayerId(data.PlayerId);
         });
 
-        udpHandlers[NetworkData.Snapshot] = PacketHandler.Create(this, PacketHandlerType.Update, (SnapshotData data) =>
+        udpHandlers[Network.Snapshot] = PacketHandler.Create(this, PacketHandlerType.Update, (SnapshotData data) =>
         {
             foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
             {

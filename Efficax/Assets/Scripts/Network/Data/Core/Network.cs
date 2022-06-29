@@ -1,8 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public abstract class NetworkData
+﻿public static class Network
 {
     // Network Data Enum Variants
     public const byte Input = 0;
@@ -12,6 +8,4 @@ public abstract class NetworkData
     public const byte Join = 4;
     public const byte Spawn = 5;
     public const byte Despawn = 6;
-
-    public byte TickId { get; protected set; }
 }

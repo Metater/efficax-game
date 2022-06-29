@@ -5,73 +5,56 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class SnapshotData : NetworkData, IReadData<SnapshotData>
+public class SnapshotData : NetworkData<SnapshotData>
 {
     public List<EntitySnapshotData> EntitySnapshots { get; private set; } = new();
 
-    public SnapshotData Read(NetDataReader reader, byte tickId)
+    public override SnapshotData Read(NetDataReader reader)
     {
-        TickId = tickId;
-
         byte entitySnapshotCount = reader.GetByte();
         for (int i = 0; i < entitySnapshotCount; i++)
         {
-            EntitySnapshots.Add(new EntitySnapshotData().Read(reader, tickId));
+            EntitySnapshots.Add(new EntitySnapshotData().SetTickIdAndRead(reader, TickId));
         }
 
         return this;
     }
 }
 
-public class EntitySnapshotData : NetworkData
+public class EntitySnapshotData : NetworkData<EntitySnapshotData>
 {
     public ulong Id { get; private set; }
     public Vector2 Pos { get; private set; }
-    public EntitySpecificSnapshotData Data { get; private set; }
+    public IEntitySpecificSnapshotData Data { get; private set; }
 
-    public EntitySnapshotData Read(NetDataReader reader, byte tickId)
+    public override EntitySnapshotData Read(NetDataReader reader)
     {
-        TickId = tickId;
-
         Id = reader.GetULong();
         Pos = DataUtils.ReadPos(reader);
 
+        // TODO infer entity type
         EntityType entityType = (EntityType)reader.GetByte();
-        Data = EntitySpecificSnapshotData.Read(entityType, reader, tickId);
+        Data = entityType switch
+        {
+            EntityType.Player => new PlayerSnapshotData().SetTickIdAndRead(reader, TickId),
+            _ => null,
+        };
 
         return this;
     }
 }
 
-public abstract class EntitySpecificSnapshotData : NetworkData
-{
-    public EntityType Type { get; protected set; }
-
-    public static EntitySpecificSnapshotData Read(EntityType entityType, NetDataReader reader, byte tickId)
-    {
-        EntitySpecificSnapshotData data = entityType switch
-        {
-            EntityType.Player => new PlayerSnapshotData().Read(reader, tickId),
-            _ => null,
-        };
-
-        if (data is not null)
-        {
-            data.Type = entityType;
-        }
-
-        return data;
-    }
-}
-
-public class PlayerSnapshotData : EntitySpecificSnapshotData, IReadData<PlayerSnapshotData>
+public class PlayerSnapshotData : NetworkData<PlayerSnapshotData>, IEntitySpecificSnapshotData
 {
     public byte InputSequence { get; private set; }
 
-    public PlayerSnapshotData Read(NetDataReader reader, byte tickId)
+    public EntityType GetEntityType()
     {
-        TickId = tickId;
+        return EntityType.Player;
+    }
 
+    public override PlayerSnapshotData Read(NetDataReader reader)
+    {
         InputSequence = reader.GetByte();
 
         return this;
