@@ -8,13 +8,13 @@ use super::{collider::MetaitusCollider, entity::MetaitusEntity};
 
 pub struct MetaitusZone {
     // entity_id, entity
-    pub entities: HashMap<u64, MetaitusEntity>,
+    pub entities: HashMap<u32, MetaitusEntity>,
     // cell_index, entities
-    cells: HashMap<u32, Vec<u64>>,
+    cells: HashMap<u32, Vec<u32>>,
     // cell_index, statics
     statics: HashMap<u32, Vec<MetaitusCollider>>,
     // static_id, cell_indicies
-    static_cells: HashMap<u64, (u32, Vector2<u8>)>,
+    static_cells: HashMap<u32, (u32, Vector2<u8>)>,
 
     entity_id_gen: IdGen,
     static_id_gen: IdGen,
@@ -44,7 +44,7 @@ impl MetaitusZone {
         }
     }
 
-    pub fn tick(&mut self, tick_id: u64, delta_time: f32) {
+    pub fn tick(&mut self, tick_id: u32, delta_time: f32) {
 
         self.cache_entity_data();
 
@@ -124,7 +124,7 @@ impl MetaitusZone {
 }
 
 impl MetaitusZone {
-    fn update_cell_if_needed(entity: &mut MetaitusEntity, cells: &mut HashMap<u32, Vec<u64>>) {
+    fn update_cell_if_needed(entity: &mut MetaitusEntity, cells: &mut HashMap<u32, Vec<u32>>) {
         let last_cell_index = entity.current_cell_index;
         entity.current_cell_index = Self::get_index_at_pos(entity.pos);
         if last_cell_index != entity.current_cell_index {
@@ -185,7 +185,7 @@ impl MetaitusZone {
             }
         }
     }
-    pub fn despawn_entity(&mut self, id: u64) -> Option<MetaitusEntity> {
+    pub fn despawn_entity(&mut self, id: u32) -> Option<MetaitusEntity> {
         if let Some(entity) = self.entities.remove(&id) {
             if let Some(cell) = self.cells.get_mut(&entity.current_cell_index) {
                 let pos = cell.iter().position(|&entity_id| entity_id == entity.id).expect("entity id not found in cell when despawning");
@@ -201,7 +201,7 @@ impl MetaitusZone {
 }
 
 impl MetaitusZone {
-    pub fn add_static(&mut self, collider: MetaitusCollider) -> u64 {
+    pub fn add_static(&mut self, collider: MetaitusCollider) -> u32 {
         // keep id assignment private
         let collider = collider.copy_with_id(self.static_id_gen.get());
 
@@ -235,7 +235,7 @@ impl MetaitusZone {
 
         collider.id
     }
-    pub fn remove_static(&mut self, id: u64) {
+    pub fn remove_static(&mut self, id: u32) {
         let static_cell = self.static_cells.remove(&id).expect("static id not found when removing static");
         let int_coords = Self::get_int_coords_at_index(static_cell.0);
         for y in int_coords.y..=int_coords.y + static_cell.1.y as u32 {

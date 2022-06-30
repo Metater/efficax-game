@@ -45,7 +45,7 @@ public class PacketManager : MonoBehaviour
         ExecuteActions(FixedUpdateQueue);
     }
 
-    public void Handle(NetDataReader reader, bool isTcp, byte tickId)
+    public void Handle(NetDataReader reader, bool isTcp, uint tickId)
     {
         byte packetType = reader.GetByte();
 

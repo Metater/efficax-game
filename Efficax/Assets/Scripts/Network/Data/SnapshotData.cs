@@ -23,13 +23,13 @@ public class SnapshotData : NetworkData<SnapshotData>
 
 public class EntitySnapshotData : NetworkData<EntitySnapshotData>
 {
-    public ulong Id { get; private set; }
+    public uint Id { get; private set; }
     public Vector2 Pos { get; private set; }
     public IEntitySpecificSnapshotData Data { get; private set; }
 
     public override EntitySnapshotData Read(NetDataReader reader)
     {
-        Id = reader.GetULong();
+        Id = reader.GetUInt();
         Pos = DataUtils.ReadPos(reader);
 
         // TODO infer entity type

@@ -15,8 +15,8 @@ public class Entity : MonoBehaviour
 
     [SerializeField] private float rotationAverageWindowTime;
 
-    private bool leadingTickValid = false;
-    private byte leadingTick = 0;
+    private bool firstUpdateReceived = false;
+    private uint leadingTick = 0;
 
     private bool lerpStart = false;
     private Vector3[] interpolationBuffer;
@@ -70,6 +70,8 @@ public class Entity : MonoBehaviour
         float angle = transform.localEulerAngles.z;
         if (lastUpdate.z != 0 && nextUpdate.z != 0)
         {
+            //float d = nextUpdate.z - lastUpdate.z;
+            //print(d);
             lerpStart = true;
             float step = Mathf.InverseLerp(lastUpdate.z, nextUpdate.z, sweepTime);
             Vector2 lastPos = transform.position;
@@ -79,6 +81,7 @@ public class Entity : MonoBehaviour
             {
                 angle = Vector2.SignedAngle(Vector2.up, pos - lastPos);
             }
+            //print(((pos - lastPos).x) / Time.deltaTime);
         }
         else
         {
@@ -106,7 +109,7 @@ public class Entity : MonoBehaviour
             sum /= rotationAverageWindow.Count;
             transform.localEulerAngles = new Vector3(transform.localEulerAngles.x, transform.localEulerAngles.y, Mathf.Atan2(sum.x, sum.y) * -Mathf.Rad2Deg);
         }
-    }
+    }  
 
     private void FixedUpdate()
     {
@@ -121,11 +124,11 @@ public class Entity : MonoBehaviour
     public virtual void UpdateEnity(EntitySnapshotData data)
     {
         //if (UnityEngine.Random.Range(0, 100) < (1f / 25f) * 100f)
-            //return;
+        //return;
 
-        if (!leadingTickValid)
+        if (!firstUpdateReceived)
         {
-            leadingTickValid = true;
+            firstUpdateReceived = true;
             leadingTick = data.TickId;
             transform.position = data.Pos;
         }
@@ -135,15 +138,11 @@ public class Entity : MonoBehaviour
             {
                 leadingTick = data.TickId;
             }
-            else if (leadingTick > 127 && data.TickId < 63)
-            {
-                leadingTick = data.TickId;
-            }
         }
 
         // TODO DONT SAVE UPDATE IF SWEEP COULD HIT IT
         // CALCULATE TIME.TIME LATER
         // WILL NEED TO OFFSET LATER ^^^^ DONT TRUST TWO RATES ON DIFF COMPUTERS?
-        interpolationBuffer[data.TickId] = new Vector3(data.Pos.x, data.Pos.y, Time.time);
+        interpolationBuffer[data.TickId % 256] = new Vector3(data.Pos.x, data.Pos.y, Time.time);
     }
 }

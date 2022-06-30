@@ -8,7 +8,7 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private float cameraFollowMaxSpeed;
 
     public bool IsPlayerIdSet { get; private set; } = false;
-    public ulong PlayerId { get; private set; }
+    public uint PlayerId { get; private set; }
 
     private Vector2 cameraFollowVelocity = Vector2.zero;
 
@@ -32,7 +32,7 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
-    public void SetPlayerId(ulong playerId)
+    public void SetPlayerId(uint playerId)
     {
         if (!IsPlayerIdSet)
         {

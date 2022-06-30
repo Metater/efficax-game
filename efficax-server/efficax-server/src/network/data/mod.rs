@@ -8,13 +8,13 @@ pub mod impls;
 /* efficax-game schema
 
 S->C:
-    TCP packet: (3 + n bytes)
+    TCP packet: (6 + n bytes)
         data_len: u16
-        tick_id: u8
+        tick_id: u32
         NetworkData...
 
-    UDP packet: (1 + n bytes)
-        tick_id: u8
+    UDP packet: (4 + n bytes)
+        tick_id: u32
         NetworkData...
 C->S:
     TCP packet: (2 + n bytes)
@@ -34,8 +34,8 @@ NetworkData: (1 + n bytes)
     2 Snapshot: (UDP S->C) (1 + n bytes)
         entity_snapshots_len: u8
         entity_snapshots: EntitySnapshotData...
-        EntitySnapshotData: (6 + n bytes)
-            id: u64
+        EntitySnapshotData: (8 + n bytes)
+            id: u32
             pos: PositionData
             EntitySpecificSnapshotData...
             EntitySpecificSnapshotData: (1 + n bytes)
@@ -44,9 +44,9 @@ NetworkData: (1 + n bytes)
                     input_sequence: u8
     3 InitUDP: (TCP C->S) (2 bytes)
         udp_port: u16
-    4 Join: (TCP S->C)
-        
-    5 Leave: (TCP S->C)
+    4 Join: (TCP S->C) (8 bytes)
+        player_id: u32
+        pos: PositionData
 
 Shared:
     PositionData: (4 bytes)
@@ -94,7 +94,7 @@ pub struct SnapshotData {
 
 #[derive(bincode::Encode, Debug)]
 pub struct EntitySnapshotData {
-    pub id: u64,
+    pub id: u32,
     pub pos: PositionData,
     pub data: EntitySpecificSnapshotData,
 }
@@ -112,24 +112,18 @@ pub struct PlayerSnapshotData {
 // Join
 #[derive(bincode::Encode, Debug)]
 pub struct JoinData {
-    pub player_id: u64,
+    pub player_id: u32,
     pub pos: PositionData
-}
-
-// Leave
-#[derive(bincode::Encode, Debug)]
-pub struct LeaveData {
-
 }
 
 // Spawn
 #[derive(bincode::Encode, Debug)]
 pub struct SpawnData {
-    pub entity_id: u64
+    pub entity_id: u32
 }
 
 // Despawn
 #[derive(bincode::Encode, Debug)]
 pub struct DespawnData {
-    pub entity_id: u64
+    pub entity_id: u32
 }

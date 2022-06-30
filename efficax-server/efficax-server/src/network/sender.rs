@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::io;
 use std::net::SocketAddr;
+use std::ops::RangeFrom;
 use std::sync::Arc;
 
 use byteorder::{LittleEndian, ByteOrder};
@@ -51,7 +52,7 @@ async fn start_sending(mut sender_rx: UnboundedReceiver<NetworkSenderMessage>, u
                             // Drop data, UDP is unreliable, so it won't matter
                         }
                         else {
-                            udp_send(&packet, &encoded_data[2..], client, &udp_socket).await;
+                            udp_send(&packet, encoded_data, client, &udp_socket).await;
                         }
                     }
                     else {
@@ -67,13 +68,24 @@ async fn start_sending(mut sender_rx: UnboundedReceiver<NetworkSenderMessage>, u
 }
 
 fn encode_packet(packet: &NetworkPacket, buf: &mut [u8]) -> usize {
-    let encode_result = bincode::encode_into_slice(&packet.data, &mut buf[3..], bincode::config::legacy());
+
+    let data_slice: RangeFrom<usize> =
+    if packet.is_tcp { 6.. }
+    else { 4.. };
+    
+    let encode_result = bincode::encode_into_slice(&packet.data, &mut buf[data_slice], bincode::config::legacy());
 
     match encode_result {
         Ok(len) => {
-            LittleEndian::write_u16(&mut buf[..2], len as u16);
-            buf[2] = packet.tick_id;
-            len + 3
+            if packet.is_tcp {
+                LittleEndian::write_u16(&mut buf[..2], len as u16);
+                LittleEndian::write_u32(&mut buf[2..6], packet.tick_id);
+                len + 6
+            }
+            else {
+                LittleEndian::write_u32(&mut buf[..4], packet.tick_id);
+                len + 4
+            }
         }
         Err(e) => {
             panic!("[network sender]: error: {} encoding data: {:?} for client(s): {:?}", e, packet.data, packet.addrs);

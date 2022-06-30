@@ -10,7 +10,7 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private Transform entitiesParent;
     [SerializeField] private GameObject entityPrefab;
 
-    private Dictionary<ulong, Entity> entities;
+    private Dictionary<uint, Entity> entities;
 
     private void Awake()
     {
@@ -21,7 +21,7 @@ public class EntityManager : MonoBehaviour
     {
         if (GameManager.I.IsDisconnected)
         {
-            foreach ((ulong _, Entity entity) in entities)
+            foreach ((uint _, Entity entity) in entities)
             {
                 Destroy(entity.gameObject);
             }
@@ -29,7 +29,7 @@ public class EntityManager : MonoBehaviour
         }
     }
 
-    public bool TryGetEntity(ulong entityId, out Entity entity)
+    public bool TryGetEntity(uint entityId, out Entity entity)
     {
         return entities.TryGetValue(entityId, out entity);
     }

@@ -2,7 +2,7 @@ use cgmath::{Vector2, Zero, Bounded};
 
 #[derive(Copy, Clone, Debug)]
 pub struct MetaitusCollider {
-    pub id: u64,
+    pub id: u32,
     pub min: Vector2<f32>,
     pub max: Vector2<f32>
 }
@@ -16,7 +16,7 @@ impl MetaitusCollider {
         }
     }
 
-    pub fn new_with_id(id: u64, min: Vector2<f32>, max: Vector2<f32>) -> Self {
+    pub fn new_with_id(id: u32, min: Vector2<f32>, max: Vector2<f32>) -> Self {
         MetaitusCollider {
             id,
             min,
@@ -36,7 +36,7 @@ impl MetaitusCollider {
         !self.id.is_zero()
     }
 
-    pub fn copy_with_id(&self, id: u64) -> Self {
+    pub fn copy_with_id(&self, id: u32) -> Self {
         Self::new_with_id(id, self.min, self.max)
     }
 

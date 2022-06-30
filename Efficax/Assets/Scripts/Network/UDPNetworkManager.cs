@@ -53,7 +53,7 @@ public class UDPNetworkManager : UdpClient
     {
         reader.SetSource(buffer, (int)offset, (int)size);
 
-        byte tickId = reader.GetByte();
+        uint tickId = reader.GetUInt();
 
         while (reader.AvailableBytes > 0)
         {

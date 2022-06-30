@@ -58,17 +58,17 @@ public class TCPNetworkManager : TcpClient
         Array.Copy(buffer, offset, data, 0, size);
         ringBuffer.InsertRange(ringBuffer.Count, data);
 
-        if (ringBuffer.Count >= 3)
+        if (ringBuffer.Count >= 6)
         {
             int dataRead = 0;
             byte[] ringBufferData = ringBuffer.ToArray();
 
-            while (ringBuffer.Count >= 3)
+            while (ringBuffer.Count >= 6)
             {
                 ushort packetSize = BitConverter.ToUInt16(new byte[] { ringBuffer.RemoveFromFront(), ringBuffer.RemoveFromFront() });
                 dataRead += 2;
-                byte tickId = ringBuffer.RemoveFromFront();
-                dataRead += 1;
+                uint tickId = BitConverter.ToUInt32(new byte[] { ringBuffer.RemoveFromFront(), ringBuffer.RemoveFromFront(), ringBuffer.RemoveFromFront(), ringBuffer.RemoveFromFront() });
+                dataRead += 4;
 
                 reader.SetSource(ringBufferData, dataRead, dataRead + packetSize);
                 while (reader.AvailableBytes > 0)

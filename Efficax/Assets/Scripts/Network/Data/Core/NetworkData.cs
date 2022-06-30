@@ -4,9 +4,9 @@ using UnityEngine;
 
 public abstract class NetworkData<T> where T : class
 {
-    public byte TickId { get; protected set; }
+    public uint TickId { get; protected set; }
 
-    public T SetTickIdAndRead(NetDataReader reader, byte tickId)
+    public T SetTickIdAndRead(NetDataReader reader, uint tickId)
     {
         TickId = tickId;
         return Read(reader);

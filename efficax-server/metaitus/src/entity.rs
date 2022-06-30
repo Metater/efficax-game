@@ -6,7 +6,7 @@ use super::collider::MetaitusCollider;
 
 #[derive(Debug)]
 pub struct MetaitusEntity {
-    pub id: u64,
+    pub id: u32,
     pub pos: Vector2<f32>,
     pub current_cell_index: u32,
 
@@ -29,12 +29,12 @@ pub struct MetaitusEntity {
 
     pub vel: Vector2<f32>,
     pub moved_xy: bool,
-    pub last_moved_on_tick: u64,
+    pub last_moved_on_tick: u32,
     pub tick_count: u32,
 }
 
 impl MetaitusEntity {
-    pub fn new(id: u64, pos: Vector2<f32>) -> Self {
+    pub fn new(id: u32, pos: Vector2<f32>) -> Self {
         MetaitusEntity {
             id,
             pos,
@@ -108,7 +108,7 @@ impl MetaitusEntity {
         self.pos = pos;
     }
 
-    pub fn tick(&mut self, tick_id: u64, delta_time: f32, near_statics: &Vec<MetaitusCollider>) -> bool {
+    pub fn tick(&mut self, tick_id: u32, delta_time: f32, near_statics: &Vec<MetaitusCollider>) -> bool {
         self.moved_xy = false;
         
         if self.has_vel_epsilon {

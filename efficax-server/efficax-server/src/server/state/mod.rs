@@ -14,7 +14,7 @@ use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntitySna
 use self::client_state::ClientState;
 
 pub struct ServerState {
-    pub tick_id: u64,
+    pub tick_id: u32,
 
     pub clients: HashMap<SocketAddr, ClientState>,
 
@@ -32,7 +32,7 @@ impl ServerState {
 
             zone: MetaitusZone::new(),
 
-            net: NetworkSenderHandle::new(sender_tx),
+            net: NetworkSenderHandle::new(sender_tx)
         }
     }
 
@@ -50,10 +50,6 @@ impl ServerState {
         self.send_client_updates();
 
         self.tick_id += 1;
-    }
-
-    pub fn get_tick_id_u8(&self) -> u8 {
-        (self.tick_id % 256) as u8
     }
 }
 
@@ -85,7 +81,7 @@ impl ServerState {
         }
 
         let addrs: Vec<SocketAddr> = self.clients.keys().copied().collect();
-        self.net.multicast(false, addrs, self.get_tick_id_u8(), NetworkData::Snapshot(SnapshotData {
+        self.net.multicast(false, addrs, self.tick_id, NetworkData::Snapshot(SnapshotData {
             entity_snapshots
         }));
     }
@@ -121,7 +117,7 @@ impl ServerState {
             player_id: entity.id,
             pos: PositionData::new(entity.pos)
         });
-        self.net.unicast(true, addr, self.get_tick_id_u8(), data);
+        self.net.unicast(true, addr, self.tick_id, data);
     }
     pub fn leave(&mut self, addr: SocketAddr) {
         if let Some(client) = self.clients.remove(&addr) {

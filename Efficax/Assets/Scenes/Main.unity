@@ -690,7 +690,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: acad446258de65241a2e209954f93ff2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraFollowSmoothTime: 0.3
+  cameraFollowSmoothTime: 0.25
   cameraFollowMaxSpeed: 12
 --- !u!1 &1489619804
 GameObject:

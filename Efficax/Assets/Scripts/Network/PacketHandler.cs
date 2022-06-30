@@ -2,16 +2,16 @@
 
 public class PacketHandler
 {
-    private readonly Action<NetDataReader, byte> packetHandler;
+    private readonly Action<NetDataReader, uint> packetHandler;
 
-    private PacketHandler(Action<NetDataReader, byte> packetHandler)
+    private PacketHandler(Action<NetDataReader, uint> packetHandler)
     {
         this.packetHandler = packetHandler;
     }
 
     public static PacketHandler Create<T>(PacketManager packetManager, PacketHandlerType handlerType, Action<T> handler) where T : NetworkData<T>, new()
     {
-        void PacketHandler(NetDataReader reader, byte tickId)
+        void PacketHandler(NetDataReader reader, uint tickId)
         {
             T data = new T().SetTickIdAndRead(reader, tickId);
             switch (handlerType)
@@ -32,7 +32,7 @@ public class PacketHandler
     }
 
 
-    public void Handle(NetDataReader reader, byte tickId)
+    public void Handle(NetDataReader reader, uint tickId)
     {
         packetHandler(reader, tickId);
     }
