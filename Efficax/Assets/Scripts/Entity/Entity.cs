@@ -7,15 +7,27 @@ using UnityEngine;
 
 public class Entity : MonoBehaviour
 {
-    [SerializeField] private double sweepTimeDelay;
+    [SerializeField] private float velocityToUpdateRotation;
+    [SerializeField] private float rotationAverageWindowTime;
 
-    private bool firstUpdateReceived = false;
+    [SerializeField] private double sweepTimeVelocity;
+    [SerializeField] private double sweepTimeDelay;
+    [SerializeField] private double sweepTimeDelayTarget;
+    [SerializeField] private double sweepTimeOffset;
+
+    private bool isInit = false;
     private uint leadingTick = 0;
 
-    private uint timePivotTick = 0;
-    private double timePivot = 0;
+    private uint pivotTimeTick = 0;
+    private double pivotTime = 0;
+
+    private bool startedLerping = false;
 
     private (Vector2 pos, uint tickId)[] interpolationBuffer;
+
+    private Queue<Vector2> rotationAverageWindow;
+
+    private Queue<double> targetSweepTimeDelayQueue;
 
     public void Init()
     {
@@ -29,6 +41,9 @@ public class Entity : MonoBehaviour
         {
             interpolationBuffer[i].tickId = uint.MaxValue;
         }
+
+        rotationAverageWindow = new();
+        targetSweepTimeDelayQueue = new();
     }
 
     private void Start()
@@ -38,13 +53,16 @@ public class Entity : MonoBehaviour
 
     private void Update()
     {
+        if (Math.Abs((sweepTimeDelayTarget + sweepTimeOffset) - sweepTimeDelay) > sweepTimeVelocity * 16)
+        {
+            sweepTimeDelay = (sweepTimeDelayTarget + sweepTimeOffset);
+        }
+
         (Vector2 pos, uint tickId) pastUpdate = (Vector2.zero, uint.MaxValue);
         (Vector2 pos, uint tickId) futureUpdate = (Vector2.zero, uint.MaxValue);
 
-        double actualAndPivotTimeDelta = Time.timeAsDouble - timePivot;
-        double sweepTime = TickToSeconds(timePivotTick) + actualAndPivotTimeDelta;
-        print(sweepTime);
-        //sweepTime = TickToSeconds(leadingTick);
+        double timeSincePivot = Time.timeAsDouble - pivotTime;
+        double sweepTime = (TickToSeconds(pivotTimeTick) + timeSincePivot) - sweepTimeDelay;
 
         for (int i = 0; i < 256; i++)
         {
@@ -69,36 +87,83 @@ public class Entity : MonoBehaviour
             }
         }
 
+        float angle = transform.localEulerAngles.z;
+
         if (pastUpdate.tickId != uint.MaxValue && futureUpdate.tickId != uint.MaxValue)
         {
-            double step = InverseLerpDouble(TickToSeconds(pastUpdate.tickId), TickToSeconds(futureUpdate.tickId), sweepTime);
-            Vector2 pos = Vector2.Lerp(pastUpdate.pos, futureUpdate.pos, (float)step);
+            startedLerping = true;
+            double pastTime = TickToSeconds(pastUpdate.tickId);
+            double futureTime = TickToSeconds(futureUpdate.tickId);
+            double step = InverseLerpDouble(sweepTime, pastTime, futureTime);
+            Vector2 lastPos = transform.position;
+            Vector2 pos = Vector2.LerpUnclamped(pastUpdate.pos, futureUpdate.pos, (float)step);
             transform.position = pos;
+            if (lastPos != pos && (Vector2.Distance(pos, lastPos) / Time.deltaTime > velocityToUpdateRotation))
+            {
+                angle = Vector2.SignedAngle(Vector2.up, pos - lastPos);
+            }
         }
         else
         {
-            print("NO LERP DATA");
+            if (startedLerping)
+            {
+                print("NO LERP DATA");
+            }
         }
+
+        rotationAverageWindow.Enqueue(new Vector2(angle, Time.time));
+        while (rotationAverageWindow.Count > 0 && rotationAverageWindow.First().y < Time.time - rotationAverageWindowTime)
+        {
+            rotationAverageWindow.Dequeue();
+        }
+        if (rotationAverageWindow.Count > 0)
+        {
+            Vector2 sum = Vector2.zero;
+            foreach (var rotation in rotationAverageWindow)
+            {
+                float angleRad = (rotation.x + 90f) * Mathf.Deg2Rad;
+                sum += new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
+            }
+            sum /= rotationAverageWindow.Count;
+            transform.localEulerAngles = new Vector3(transform.localEulerAngles.x, transform.localEulerAngles.y, Mathf.Atan2(sum.x, sum.y) * -Mathf.Rad2Deg);
+        }
+
+        sweepTimeDelay = StepTowardsDouble(sweepTimeDelay, sweepTimeDelayTarget + sweepTimeOffset, Time.deltaTime * sweepTimeVelocity);
     }
 
     public virtual void UpdateEnity(EntitySnapshotData data)
     {
-        print(data.TickId);
+        //if (UnityEngine.Random.Range(0f, 100f) < (5f / 25f) * 100f)
+            //return;
 
-        if (!firstUpdateReceived)
+        if (!isInit)
         {
-            firstUpdateReceived = true;
+            isInit = true;
             leadingTick = data.TickId;
             transform.position = data.Pos;
-            timePivotTick = data.TickId;
-            timePivot = Time.timeAsDouble;
-            print(timePivot);
+            pivotTimeTick = data.TickId;
+            pivotTime = Time.timeAsDouble;
         }
         else
         {
             if (data.TickId > leadingTick)
             {
                 leadingTick = data.TickId;
+            }
+
+            double timeSincePivot = Time.timeAsDouble - pivotTime;
+            double sweepTime = TickToSeconds(pivotTimeTick) + timeSincePivot;
+            double delta = TickToSeconds(data.TickId) - sweepTime;
+            sweepTimeDelayTarget = -delta + 0.04;
+
+            targetSweepTimeDelayQueue.Enqueue(sweepTimeDelayTarget);
+            if (targetSweepTimeDelayQueue.Count > 25)
+            {
+                targetSweepTimeDelayQueue.Dequeue();
+            }
+            if (targetSweepTimeDelayQueue.Count == 25)
+            {
+                sweepTimeOffset = Math.Abs(targetSweepTimeDelayQueue.Max() - targetSweepTimeDelayQueue.Min());
             }
         }
 
@@ -113,5 +178,35 @@ public class Entity : MonoBehaviour
     private static double InverseLerpDouble(double t, double a, double b)
     {
         return (t - a) / (b - a);
+    }
+
+    private static double StepTowardsDouble(double from, double to, double by)
+    {
+        double value = from;
+
+        if (from == to)
+        {
+            return value;
+        }
+
+        if (from > to)
+        {
+            value = from - by;
+            if (from < to)
+            {
+                value = to;
+            }
+        }
+
+        if (from < to)
+        {
+            value = from + by;
+            if (from > to)
+            {
+                value = to;
+            }
+        }
+
+        return value;
     }
 }

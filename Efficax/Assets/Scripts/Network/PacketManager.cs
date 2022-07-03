@@ -21,18 +21,7 @@ public class PacketManager : MonoBehaviour
         tcpHandlers = new PacketHandler[256];
         udpHandlers = new PacketHandler[256];
 
-        tcpHandlers[Network.Join] = PacketHandler.Create(this, PacketHandlerType.Update, (JoinData data) =>
-        {
-            GameManager.I.playerManager.SetPlayerId(data.PlayerId);
-        });
-
-        udpHandlers[Network.Snapshot] = PacketHandler.Create(this, PacketHandlerType.Update, (SnapshotData data) =>
-        {
-            foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
-            {
-                GameManager.I.entityManager.EntitySnapshot(entityUpdate);
-            }
-        });
+        AddPacketHandlers();
     }
 
     public void ExecuteQueuedUpdates()
@@ -85,5 +74,22 @@ public class PacketManager : MonoBehaviour
             else
                 break;
         }
+    }
+
+    private void AddPacketHandlers()
+    {
+        tcpHandlers[Network.Join] = PacketHandler.Create(this, PacketHandlerType.Update, (JoinData data) =>
+        {
+            GameManager.I.playerManager.Joined(data);
+            GameManager.I.entityManager.Joined(data);
+        });
+
+        udpHandlers[Network.Snapshot] = PacketHandler.Create(this, PacketHandlerType.Update, (SnapshotData data) =>
+        {
+            foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
+            {
+                GameManager.I.entityManager.EntitySnapshot(entityUpdate);
+            }
+        });
     }
 }

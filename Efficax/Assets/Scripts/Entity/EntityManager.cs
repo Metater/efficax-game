@@ -8,7 +8,7 @@ using UnityEngine;
 public class EntityManager : MonoBehaviour
 {
     [SerializeField] private Transform entitiesParent;
-    [SerializeField] private GameObject entityPrefab;
+    [SerializeField] private Entity entityPrefab;
 
     private Dictionary<uint, Entity> entities;
 
@@ -19,9 +19,14 @@ public class EntityManager : MonoBehaviour
 
     private void Update()
     {
+        ResetIfDisconnected();
+    }
+
+    private void ResetIfDisconnected()
+    {
         if (GameManager.I.IsDisconnected)
         {
-            foreach ((uint _, Entity entity) in entities)
+            foreach ((_, Entity entity) in entities)
             {
                 Destroy(entity.gameObject);
             }
@@ -34,12 +39,27 @@ public class EntityManager : MonoBehaviour
         return entities.TryGetValue(entityId, out entity);
     }
 
+    public void Joined(JoinData data)
+    {
+        if (!entities.ContainsKey(data.PlayerId))
+        {
+            Entity entity = Instantiate(entityPrefab, data.Pos, Quaternion.identity, entitiesParent);
+            entities.Add(data.PlayerId, entity);
+            entity.Init();
+            // TODO update once
+        }
+        else
+        {
+            throw new Exception("Entity exists already when joining");
+        }
+    }
+
     public void EntitySnapshot(EntitySnapshotData data)
     {
         Entity entity;
         if (!entities.ContainsKey(data.Id))
         {
-            entity = Instantiate(entityPrefab, data.Pos, Quaternion.identity, entitiesParent).GetComponent<Entity>();
+            entity = Instantiate(entityPrefab, data.Pos, Quaternion.identity, entitiesParent);
             entities.Add(data.Id, entity);
             entity.Init();
         }

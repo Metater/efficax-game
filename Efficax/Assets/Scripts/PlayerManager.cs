@@ -32,12 +32,12 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
-    public void SetPlayerId(uint playerId)
+    public void Joined(JoinData data)
     {
         if (!IsPlayerIdSet)
         {
             IsPlayerIdSet = true;
-            PlayerId = playerId;
+            PlayerId = data.PlayerId;
         }
     }
 }
