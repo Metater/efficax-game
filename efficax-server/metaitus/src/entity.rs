@@ -8,6 +8,7 @@ use super::collider::MetaitusCollider;
 pub struct MetaitusEntity {
     pub id: u32,
     pub pos: Vector2<f32>,
+    pub vel: Vector2<f32>,
     pub current_cell_index: u32,
 
     pub has_bounds: bool,
@@ -27,10 +28,8 @@ pub struct MetaitusEntity {
     pub has_drag: bool,
     pub drag: f32,
 
-    pub vel: Vector2<f32>,
     pub moved_xy: bool,
-    pub last_moved_on_tick: u32,
-    pub tick_count: u32,
+    pub moved_on_tick: u32
 }
 
 impl MetaitusEntity {
@@ -38,13 +37,14 @@ impl MetaitusEntity {
         MetaitusEntity {
             id,
             pos,
+            vel: Vector2::zero(),
             current_cell_index: MetaitusZone::get_index_at_pos(pos),
 
             has_bounds: false,
             bounds: MetaitusCollider::all(),
 
             has_vel_epsilon: true,
-            vel_epsilon: Self::VEL_EPSILON,
+            vel_epsilon: 1.0 / 12.0,
 
             has_collider: false,
             collider: MetaitusCollider::none(),
@@ -57,10 +57,8 @@ impl MetaitusEntity {
             max_repulsion_mag: 0.0,
             repulsion: 0.0,
 
-            vel: Vector2::zero(),
             moved_xy: false,
-            last_moved_on_tick: 0,
-            tick_count: 0,
+            moved_on_tick: 0
         }
     }
 
@@ -98,14 +96,8 @@ impl MetaitusEntity {
 }
 
 impl MetaitusEntity {
-    const VEL_EPSILON: f32 = 1.0 / 12.0;
-
     pub fn add_force(&mut self, force: Vector2<f32>, delta_time: f32) {
         self.vel += force * delta_time;
-    }
-
-    pub fn teleport_unchecked(&mut self, pos: Vector2<f32>) {
-        self.pos = pos;
     }
 
     pub fn tick(&mut self, tick_id: u32, delta_time: f32, near_statics: &Vec<MetaitusCollider>) -> bool {
@@ -118,38 +110,27 @@ impl MetaitusEntity {
         if !self.vel.is_zero() {
             self.moved_xy = self.update_pos(delta_time, near_statics);
             if self.moved_xy {
-                self.last_moved_on_tick = tick_id;
+                self.moved_on_tick = tick_id;
                 if self.has_drag {
                     self.apply_drag(delta_time);
                 }
             }
         }
-        else {
-            // cannot move, velocity is zero
-        }
-
-        self.tick_count += 1;
         
         self.moved_xy
     }
 
     fn apply_vel_epsilon(&mut self) {
         if self.vel.x != 0.0 && self.vel.x.abs() < self.vel_epsilon {
-            self.vel = Vector2::new(0.0, self.vel.y);
+            self.vel.x = 0.0;
         }
         if self.vel.y != 0.0 && self.vel.y.abs() < self.vel_epsilon {
-            self.vel = Vector2::new(self.vel.x, 0.0);
+            self.vel.y = 0.0;
         }
     }
 
     fn apply_drag(&mut self, timestep: f32) {
         self.vel *= 1.0 - (self.drag * timestep);
-        /*
-        let x_drag = self.drag * ((self.vel.x * self.vel.x) / 2.0);
-        let y_drag = self.drag * ((self.vel.y * self.vel.y) / 2.0);
-        self.vel.x *= 1.0 - (x_drag * timestep);
-        self.vel.y *= 1.0 - (y_drag * timestep);
-        */
     }
 
     fn update_pos(&mut self, timestep: f32, near_statics: &Vec<MetaitusCollider>) -> bool {
@@ -163,9 +144,9 @@ impl MetaitusEntity {
         let x_delta = Vector2::new(self.vel.x * timestep, 0.0);
         let y_delta = Vector2::new(0.0, self.vel.y * timestep);
 
-        let xy_collider = self.get_self_collider(nominal_pos);
-        let x_collider = self.get_self_collider(self.pos + x_delta);
-        let y_collider = self.get_self_collider(self.pos + y_delta);
+        let xy_collider = self.collider.offset(nominal_pos);
+        let x_collider = self.collider.offset(self.pos + x_delta);
+        let y_collider = self.collider.offset(self.pos + y_delta);
 
         let mut move_x = !self.vel.x.is_zero();
         let mut move_y = !self.vel.y.is_zero();
@@ -179,7 +160,6 @@ impl MetaitusEntity {
             }
         }
 
-        // use lerp to step closer to colliders if needed
         if move_x || move_y {
             for collider in near_statics {
                 if xy_collider.intersects(collider) {
@@ -197,31 +177,19 @@ impl MetaitusEntity {
             self.pos += x_delta;
         }
         else {
-            self.stop_x_vel();
+            self.vel.x = 0.0;
         }
         if move_y {
             self.pos += y_delta;
         }
         else {
-            self.stop_y_vel();
+            self.vel.y = 0.0;
         }
 
-        //(move_x, move_y)
         move_x || move_y
     }
 
     fn get_next_pos(&self, timestep: f32) -> Vector2<f32> {
         self.pos + (self.vel * timestep)
-    }
-
-    fn get_self_collider(&self, pos: Vector2<f32>) -> MetaitusCollider {
-        self.collider.offset(pos)
-    }
-
-    fn stop_x_vel(&mut self) {
-        self.vel = Vector2::new(0.0, self.vel.y);
-    }
-    fn stop_y_vel(&mut self) {
-        self.vel = Vector2::new(self.vel.x, 0.0);
     }
 }

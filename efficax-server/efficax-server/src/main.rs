@@ -15,7 +15,9 @@ async fn main() {
         receiver_handle,
         udp_receiver_handle,
         sender_handle) = network::start().await;
+    
     let sender_stop_notifier = sender_tx.clone();
+    
     let (server, server_task) = server::start(receiver_rx, sender_tx);
 
     ctrlc::set_handler(move || {
