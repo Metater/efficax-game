@@ -4,7 +4,7 @@ use cgmath::{Vector2, Zero};
 
 use efficax_utils::scaling;
 
-use crate::network::data::InputData;
+use crate::{network::data::InputData, server::constants::ServerConstants};
 
 pub struct ClientState {
     pub id: u32,
@@ -41,12 +41,12 @@ impl ClientState {
         
         if dir == 0 {
             self.movement_force = Vector2::zero();
+            return;
         }
         
-        let mag = 40.0;
         let rot = (scaling::linear_step(1.0, 9.0, dir.into()) - 0.25) * -2.0 * PI;
-        let x_force  = rot.cos() * mag;
-        let y_force = rot.sin() * mag;
+        let x_force  = rot.cos() * ServerConstants::PLAYER_MOVEMENT_SPEED;
+        let y_force = rot.sin() * ServerConstants::PLAYER_MOVEMENT_SPEED;
         self.movement_force = Vector2::new(x_force as f32, y_force as f32);
     }
 }

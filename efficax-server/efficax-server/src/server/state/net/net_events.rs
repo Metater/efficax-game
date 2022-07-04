@@ -3,9 +3,7 @@ use std::net::SocketAddr;
 use cgmath::{Vector2, Zero};
 use metaitus::collider::MetaitusCollider;
 
-use crate::network::data::{NetworkData, JoinData, types::PositionData, InputData};
-
-use super::{ServerState, client_state::ClientState};
+use crate::{network::data::{NetworkData, JoinData, types::PositionData}, server::state::{ServerState, client_state::ClientState}};
 
 impl ServerState {
     pub fn join(&mut self, addr: SocketAddr) {
@@ -29,12 +27,6 @@ impl ServerState {
     pub fn leave(&mut self, addr: SocketAddr) {
         if let Some(client) = self.clients.remove(&addr) {
             self.zone.despawn_entity(client.id);
-        }
-    }
-
-    pub fn input_data(&mut self, addr: SocketAddr, data: &InputData) {
-        if let Some(player) = self.clients.get_mut(&addr) {
-            player.feed_input(data);
         }
     }
 }
