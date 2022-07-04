@@ -1,5 +1,4 @@
 pub mod state;
-pub mod world;
 
 use std::collections::HashMap;
 use std::net::SocketAddr;

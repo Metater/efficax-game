@@ -1,15 +1,18 @@
+pub mod world;
+
 pub mod client_state;
 pub mod physics;
-pub mod network;
+pub mod net_out;
+pub mod net_in;
 
 use std::{net::SocketAddr, collections::HashMap};
 
-use cgmath::{Vector2, Zero};
+use cgmath::Vector2;
 use tokio::sync::mpsc::UnboundedSender;
 
 use metaitus::{zone::MetaitusZone, collider::MetaitusCollider, entity::MetaitusEntity};
 
-use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntitySnapshotData, SnapshotData, NetworkData, InputData, types::PositionData, EntitySpecificSnapshotData, PlayerSnapshotData, JoinData}};
+use crate::network::{NetworkSenderHandle, NetworkSenderMessage, data::{EntitySnapshotData, SnapshotData, NetworkData, types::PositionData, EntitySpecificSnapshotData, PlayerSnapshotData}};
 
 use self::client_state::ClientState;
 
@@ -55,19 +58,6 @@ impl ServerState {
 }
 
 impl ServerState {
-    fn update_clients(&mut self, delta_time: f32) {
-        for player in self.clients.values() {
-            // continual lookup of movement force when it wont change
-            // movement force is constant for the duration of the tick
-            let movement_force = player.get_movement_force();
-            if !movement_force.is_zero() {
-                if let Some(entity) = self.zone.entities.get_mut(&player.id) {
-                    entity.add_force(movement_force, delta_time);
-                }
-            }
-        }
-    }
-    
     fn send_client_updates(&mut self) {
         if self.clients.len() == 0 {
             return
@@ -98,37 +88,5 @@ impl ServerState {
             })
         };
         entity_snapshots.push(snapshot);
-    }
-}
-
-impl ServerState {
-    pub fn join(&mut self, addr: SocketAddr) {
-        let entity = self.zone.spawn_entity(Vector2::zero());
-        
-        entity
-        .with_bounds(false, MetaitusCollider::new(Vector2::new(-5.0, -3.0), Vector2::new(5.0, 3.0)))
-        .with_drag(true, 5.0)
-        .with_collider(true, MetaitusCollider::new(Vector2::new(-0.475, -0.475), Vector2::new(0.475, 0.475)))
-        .with_repulsion_radius(true, 0.4, 48.0, 3.0);
-        
-        self.clients.insert(addr, ClientState::new(entity.id));
-
-        // Send join packet
-        let data = NetworkData::Join(JoinData {
-            player_id: entity.id,
-            pos: PositionData::new(entity.pos)
-        });
-        self.net.unicast(true, addr, self.tick_id, data);
-    }
-    pub fn leave(&mut self, addr: SocketAddr) {
-        if let Some(client) = self.clients.remove(&addr) {
-            self.zone.despawn_entity(client.id);
-        }
-    }
-
-    pub fn input_data(&mut self, addr: SocketAddr, data: &InputData) {
-        if let Some(player) = self.clients.get_mut(&addr) {
-            player.feed_input(data);
-        }
     }
 }

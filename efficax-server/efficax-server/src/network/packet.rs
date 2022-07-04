@@ -21,6 +21,10 @@ impl NetworkPacket {
     }
 
     pub fn multicast(is_tcp: bool, addrs: Vec<SocketAddr>, tick_id: u32, data: NetworkData) -> Self {
+        if addrs.len() == 0 {
+            println!("[packet]: provided zero addrs: data: {:?}", data);
+        }
+
         NetworkPacket {
             is_tcp,
             addrs,
