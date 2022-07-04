@@ -39,8 +39,10 @@ impl ServerState {
     }
 
     pub fn init(&mut self) {
-        self.zone.add_static(MetaitusCollider::new(Vector2::new(2.0, 0.0), Vector2::new(3.0, 1.0)));
-        self.zone.add_static(MetaitusCollider::new(Vector2::new(4.0, 0.0), Vector2::new(5.0, 1.0)));
+        //self.zone.add_static(MetaitusCollider::new(Vector2::new(2.0, 0.0), Vector2::new(3.0, 1.0)));
+        //self.zone.add_static(MetaitusCollider::new(Vector2::new(5.0, 0.0), Vector2::new(6.0, 1.0)));
+
+        self.zone.add_static(MetaitusCollider::new(Vector2::new(0.25, 0.25), Vector2::new(0.75, 0.75)));
     }
 
     pub fn tick(&mut self, delta_time: f32) {

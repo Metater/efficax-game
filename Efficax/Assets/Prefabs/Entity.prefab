@@ -49,7 +49,7 @@ MonoBehaviour:
   rotationAverageWindowTime: 0.12
   sweepTimeVelocity: 0.005
   sweepTimeDelay: 0
-  targetSweepTimeDelay: 0
+  sweepTimeDelayTarget: 0
   sweepTimeOffset: 0.04
 --- !u!212 &3061075523680366857
 SpriteRenderer:
