@@ -3,6 +3,7 @@ pub mod net;
 
 pub mod client_state;
 pub mod physics;
+pub mod utils;
 
 use std::{net::SocketAddr, collections::HashMap};
 
@@ -43,14 +44,11 @@ impl ServerState {
         //self.zone.add_static(MetaitusCollider::new(Vector2::new(5.0, 0.0), Vector2::new(6.0, 1.0)));
 
         self.zone.add_static(MetaitusCollider::new(Vector2::new(0.25, 0.25), Vector2::new(0.75, 0.75)));
+        self.zone.add_static(MetaitusCollider::new(Vector2::new(0.75, 0.75), Vector2::new(1.25, 1.25)));
     }
 
     pub fn tick(&mut self, delta_time: f32) {
-        //println!("[server state]: tick: {}", self.tick_id);
-
         self.tick_physics(delta_time);
-
-        // later optimize by only doing lookups for entities once per tick
 
         self.tick_net_out();
 

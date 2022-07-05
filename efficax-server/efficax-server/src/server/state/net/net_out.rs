@@ -1,8 +1,50 @@
 use std::net::SocketAddr;
 
-use crate::{network::data::{NetworkData, SnapshotData, EntitySnapshotData, types::PositionData, EntitySpecificSnapshotData, PlayerSnapshotData}, server::state::ServerState};
+use cgmath::Vector2;
+
+use crate::{network::data::{NetworkData, SnapshotData, EntitySnapshotData, types::{PositionData, EntityTypeData}, EntitySpecificSnapshotData, PlayerSnapshotData, JoinData, SpawnData}, server::state::ServerState};
 
 impl ServerState {
+    pub fn notify_new_player_of_new_player(&self, addr: SocketAddr, player_id: u32, player_pos: Vector2<f32>) {
+        let data = NetworkData::Join(JoinData {
+            player_id,
+            pos: PositionData::new(player_pos)
+        });
+        self.net.unicast(true, addr, self.tick_id, data);
+    }
+    pub fn notify_new_player_of_existing_players(&self, addr: SocketAddr, player_id: u32) {
+        for client in self.clients.values() {
+            if client.id == player_id {
+                continue;
+            }
+
+            if let Some(entity) = self.zone.entities.get(&client.id) {
+                let data = NetworkData::Spawn(SpawnData {
+                    entity_type: EntityTypeData::Player,
+                    entity_id: client.id,
+                    pos: PositionData::new(entity.pos),
+                });
+                self.net.unicast(true, addr, self.tick_id, data);
+            }
+        }
+    }
+    pub fn notify_existing_players_of_new_player(&self, addr: SocketAddr, player_id: u32, player_pos: Vector2<f32>) {
+        let data = NetworkData::Spawn(SpawnData {
+            entity_type: EntityTypeData::Player,
+            entity_id: player_id,
+            pos: PositionData::new(player_pos),
+        });
+
+        let mut addrs = self.get_client_addrs();
+
+        // skip new player's address
+        addrs.remove(addrs.iter().position(|e| *e == addr).unwrap());
+
+        if addrs.len() != 0 {
+            self.net.multicast(true, addrs, self.tick_id, data);
+        }
+    }
+
     pub fn tick_net_out(&mut self) {
         if self.clients.len() == 0 {
             return
@@ -10,14 +52,14 @@ impl ServerState {
 
         let mut entity_snapshots = Vec::new();
 
-        for player in self.clients.values() {
-            if let Some(entity) = self.zone.entities.get(&player.id) {
+        for client in self.clients.values() {
+            if let Some(entity) = self.zone.entities.get(&client.id) {
                 let snapshot = EntitySnapshotData {
                     id: entity.id,
                     pos: PositionData::new(entity.pos),
                     data: EntitySpecificSnapshotData::Player({
                         PlayerSnapshotData {
-                            input_sequence: player.input_sequence
+                            input_sequence: client.input_sequence
                         }
                     })
                 };
@@ -25,8 +67,7 @@ impl ServerState {
             }
         }
 
-        let addrs: Vec<SocketAddr> = self.clients.keys().copied().collect();
-        self.net.multicast(false, addrs, self.tick_id, NetworkData::Snapshot(SnapshotData {
+        self.net.multicast(false, self.get_client_addrs(), self.tick_id, NetworkData::Snapshot(SnapshotData {
             entity_snapshots
         }));
     }

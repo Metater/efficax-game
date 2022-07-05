@@ -1,7 +1,8 @@
-use self::types::PositionData;
+use self::types::*;
 
 pub mod types;
 pub mod impls;
+pub mod constants;
 
 // If you want to free up enums, route by tcp/udp, client/server
 
@@ -52,16 +53,11 @@ Shared:
     PositionData: (4 bytes)
         x: u16
         y: u16
+    EntityTypeData: (1 byte)
+        variant: u8
 */
 
-pub const INPUT: u8 = 0;
-pub const CHAT: u8 = 1;
-pub const SNAPSHOT: u8 = 2;
-pub const INIT_UDP: u8 = 3;
-pub const JOIN: u8 = 4;
-pub const SPAWN: u8 = 5;
-pub const DESPAWN: u8 = 6;
-
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum NetworkData {
     Input(InputData),
@@ -99,8 +95,10 @@ pub struct EntitySnapshotData {
     pub data: EntitySpecificSnapshotData,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum EntitySpecificSnapshotData {
+    None,
     Player(PlayerSnapshotData)
 }
 
@@ -119,7 +117,9 @@ pub struct JoinData {
 // Spawn
 #[derive(bincode::Encode, Debug)]
 pub struct SpawnData {
-    pub entity_id: u32
+    pub entity_type: EntityTypeData,
+    pub entity_id: u32,
+    pub pos: PositionData
 }
 
 // Despawn

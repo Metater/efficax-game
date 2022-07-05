@@ -39,34 +39,39 @@ public class EntityManager : MonoBehaviour
         return entities.TryGetValue(entityId, out entity);
     }
 
-    public void Joined(JoinData data)
+    public void Spawn(uint tickId, EntityType entityType, uint entityId, Vector2 pos)
     {
-        if (!entities.ContainsKey(data.PlayerId))
+        if (!entities.ContainsKey(entityId))
         {
-            Entity entity = Instantiate(entityPrefab, data.Pos, Quaternion.identity, entitiesParent);
-            entities.Add(data.PlayerId, entity);
-            entity.Init();
-            // TODO update once
+            Entity entity = Instantiate(entityPrefab, pos, Quaternion.identity, entitiesParent);
+            entities.Add(entityId, entity);
+            entity.Init(pos);
+            entity.RawSnapshot(tickId, pos);
         }
         else
         {
-            throw new Exception("Entity exists already when joining");
+            throw new Exception($"Entity exists already when spawing: type: {entityType}");
         }
     }
 
-    public void EntitySnapshot(EntitySnapshotData data)
+    public void Despawn(uint entityId)
     {
-        Entity entity;
-        if (!entities.ContainsKey(data.Id))
+        if (entities.TryGetValue(entityId, out Entity entity))
         {
-            entity = Instantiate(entityPrefab, data.Pos, Quaternion.identity, entitiesParent);
-            entities.Add(data.Id, entity);
-            entity.Init();
+            entities.Remove(entityId);
+            Destroy(entity.gameObject);
         }
         else
         {
-            entity = entities[data.Id];
+            throw new Exception($"Cannot despawn entity, it does not exist");
         }
-        entity.UpdateEnity(data);
+    }
+
+    public void Snapshot(EntitySnapshotData data)
+    {
+        if (entities.TryGetValue(data.Id, out Entity entity))
+        {
+            entity.Snapshot(data);
+        }
     }
 }

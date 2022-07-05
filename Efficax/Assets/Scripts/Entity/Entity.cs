@@ -29,7 +29,7 @@ public class Entity : MonoBehaviour
 
     private Queue<double> targetSweepTimeDelayQueue;
 
-    public void Init()
+    public void Init(Vector2 pos)
     {
 
     }
@@ -131,29 +131,34 @@ public class Entity : MonoBehaviour
         sweepTimeDelay = StepTowardsDouble(sweepTimeDelay, sweepTimeDelayTarget + sweepTimeOffset, Time.deltaTime * sweepTimeVelocity);
     }
 
-    public virtual void UpdateEnity(EntitySnapshotData data)
+    public virtual void Snapshot(EntitySnapshotData data)
     {
         //if (UnityEngine.Random.Range(0f, 100f) < (5f / 25f) * 100f)
-            //return;
+        //return;
 
+        RawSnapshot(data.TickId, data.Pos);
+    }
+
+    public void RawSnapshot(uint tickId, Vector2 pos)
+    {
         if (!isInit)
         {
             isInit = true;
-            leadingTick = data.TickId;
-            transform.position = data.Pos;
-            pivotTimeTick = data.TickId;
+            leadingTick = tickId;
+            transform.position = pos;
+            pivotTimeTick = tickId;
             pivotTime = Time.timeAsDouble;
         }
         else
         {
-            if (data.TickId > leadingTick)
+            if (tickId > leadingTick)
             {
-                leadingTick = data.TickId;
+                leadingTick = tickId;
             }
 
             double timeSincePivot = Time.timeAsDouble - pivotTime;
             double sweepTime = TickToSeconds(pivotTimeTick) + timeSincePivot;
-            double delta = TickToSeconds(data.TickId) - sweepTime;
+            double delta = TickToSeconds(tickId) - sweepTime;
             sweepTimeDelayTarget = -delta + 0.04;
 
             targetSweepTimeDelayQueue.Enqueue(sweepTimeDelayTarget);
@@ -167,7 +172,7 @@ public class Entity : MonoBehaviour
             }
         }
 
-        interpolationBuffer[data.TickId % 256] = (data.Pos, data.TickId);
+        interpolationBuffer[tickId % 256] = (pos, tickId);
     }
 
     private static double TickToSeconds(uint tick)

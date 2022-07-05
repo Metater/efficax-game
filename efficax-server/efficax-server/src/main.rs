@@ -18,12 +18,12 @@ async fn main() {
     
     let sender_stop_notifier = sender_tx.clone();
     
-    let (server, server_task) = server::start(receiver_rx, sender_tx);
+    let (server, server_handle) = server::start(receiver_rx, sender_tx);
 
     ctrlc::set_handler(move || {
-        receiver_stop_notifier.notify_waiters();
         if server.is_running() {
             println!("[server]: stopping");
+            receiver_stop_notifier.notify_waiters();
             sender_stop_notifier.send(network::NetworkSenderMessage::Stop).ok();
             server.stop();
         }
@@ -33,7 +33,7 @@ async fn main() {
     udp_receiver_handle.await.unwrap();
     sender_handle.await.unwrap();
     
-    server_task.await.unwrap();
+    server_handle.await.unwrap();
 
     println!("[server]: stopped");
 
