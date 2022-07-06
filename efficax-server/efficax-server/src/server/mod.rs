@@ -3,7 +3,7 @@ pub mod constants;
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use std::thread::{sleep};
+use std::thread::sleep;
 use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
 
 use tokio::sync::mpsc::error::TryRecvError;
@@ -12,8 +12,6 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::time::{Instant, Duration};
 
 use crate::network::{NetworkReceiverMessage, NetworkSenderMessage};
-use crate::network::data::NetworkData;
-use crate::network::packet::NetworkPacket;
 
 use self::state::ServerState;
 
@@ -150,13 +148,15 @@ impl EfficaxServer {
     pub fn handle_message(&mut self, message: NetworkReceiverMessage) {
         match message {
             NetworkReceiverMessage::Join(addr) => {
-                self.handle_join(addr);
+                println!("[server]: client: {} joined server", addr);
+                self.state.join(addr);
             }
             NetworkReceiverMessage::Leave(addr) => {
                 if let Some(udp_addr) = self.tcp_to_udp_addrs.remove(&addr) {
                     self.udp_to_tcp_addrs.remove(&udp_addr);
                 }
-                self.handle_leave(addr);
+                println!("[server]: client: {} left server", addr);
+                self.state.leave(addr);
             }
             NetworkReceiverMessage::InitUDP((addr, udp_port)) => {
                 let udp_addr = SocketAddr::new(addr.ip(), udp_port);
@@ -173,28 +173,7 @@ impl EfficaxServer {
                         return;
                     }
                 }
-                self.handle_data(packet, addr);
-            }
-        }
-    }
-    
-    fn handle_join(&mut self, addr: SocketAddr) {
-        println!("[server]: client: {} joined server", addr);
-        self.state.join(addr);
-    }
-
-    fn handle_leave(&mut self, addr: SocketAddr) {
-        println!("[server]: client: {} left server", addr);
-        self.state.leave(addr);
-    }
-    
-    fn handle_data(&mut self, packet: NetworkPacket, addr: SocketAddr) {
-        match packet.data {
-            NetworkData::Input(ref data) => {
-                self.state.input_data(addr, data);
-            }
-            _ => {
-                println!("[server]: client: {} sent unhandleable packet: {:?}", addr, packet.data);
+                self.state.data(packet, addr);
             }
         }
     }
