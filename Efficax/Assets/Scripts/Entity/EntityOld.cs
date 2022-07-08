@@ -8,30 +8,42 @@ using UnityEngine;
 public class EntityOld : MonoBehaviour
 {
     [SerializeField] private float velocityToUpdateRotation;
-
-    [SerializeField] private float interpolationSweepDelay;
-    [SerializeField] private float interpolationSweepDelayGrowth;
-    [SerializeField] private float interpolationSweepDelayDecay;
-
     [SerializeField] private float rotationAverageWindowTime;
 
-    private bool firstUpdateReceived = false;
+    [SerializeField] private double sweepTimeVelocity;
+    [SerializeField] private double sweepTimeDelay;
+    [SerializeField] private double sweepTimeDelayTarget;
+    [SerializeField] private double sweepTimeOffset;
+
+    private bool isInit = false;
     private uint leadingTick = 0;
 
-    private bool lerpStart = false;
-    private Vector3[] interpolationBuffer;
+    private uint pivotTimeTick = 0;
+    private double pivotTime = 0;
+
+    private bool startedLerping = false;
+
+    private (Vector2 pos, uint tickId)[] interpolationBuffer;
+
     private Queue<Vector2> rotationAverageWindow;
 
-    public void Init()
+    private Queue<double> targetSweepTimeDelayQueue;
+
+    public void Init(Vector2 pos)
     {
 
     }
 
     private void Awake()
     {
-        interpolationBuffer = new Vector3[256];
+        interpolationBuffer = new (Vector2 pos, uint tickId)[256];
+        for (int i = 0; i < 256; i++)
+        {
+            interpolationBuffer[i].tickId = uint.MaxValue;
+        }
 
         rotationAverageWindow = new();
+        targetSweepTimeDelayQueue = new();
     }
 
     private void Start()
@@ -41,55 +53,61 @@ public class EntityOld : MonoBehaviour
 
     private void Update()
     {
-        Vector3 lastUpdate = Vector3.zero;
-        Vector3 nextUpdate = Vector3.zero;
-        float sweepTime = Time.time - interpolationSweepDelay;
+        if (Math.Abs((sweepTimeDelayTarget + sweepTimeOffset) - sweepTimeDelay) > sweepTimeVelocity * 16)
+        {
+            sweepTimeDelay = (sweepTimeDelayTarget + sweepTimeOffset);
+        }
+
+        (Vector2 pos, uint tickId) pastUpdate = (Vector2.zero, uint.MaxValue);
+        (Vector2 pos, uint tickId) futureUpdate = (Vector2.zero, uint.MaxValue);
+
+        double timeSincePivot = Time.timeAsDouble - pivotTime;
+        double sweepTime = (TickToSeconds(pivotTimeTick) + timeSincePivot) - sweepTimeDelay;
 
         for (int i = 0; i < 256; i++)
         {
-            Vector3 update = interpolationBuffer[i];
+            var update = interpolationBuffer[i];
 
-            // Check if update is null or expired
-            if (update.z == 0 || Time.time - update.z > 2f)
+            // Check if update is null
+            if (update.tickId == uint.MaxValue)
                 continue;
 
-            float delta = update.z - sweepTime;
+            double updateTime = TickToSeconds(update.tickId);
+            double updateAndSweepDeltaTime = updateTime - sweepTime;
 
-            if (delta < 0) // past
+            if (updateAndSweepDeltaTime < 0) // past update
             {
-                if (delta > lastUpdate.z - sweepTime || lastUpdate.z == 0)
-                    lastUpdate = update;
+                if (updateAndSweepDeltaTime > TickToSeconds(pastUpdate.tickId) - sweepTime || pastUpdate.tickId == uint.MaxValue)
+                    pastUpdate = update;
             }
-            else // future
+            else // future update
             {
-                if (delta < nextUpdate.z - sweepTime || nextUpdate.z == 0)
-                    nextUpdate = update;
+                if (updateAndSweepDeltaTime < TickToSeconds(futureUpdate.tickId) - sweepTime || futureUpdate.tickId == uint.MaxValue)
+                    futureUpdate = update;
             }
         }
 
         float angle = transform.localEulerAngles.z;
-        if (lastUpdate.z != 0 && nextUpdate.z != 0)
+
+        if (pastUpdate.tickId != uint.MaxValue && futureUpdate.tickId != uint.MaxValue)
         {
-            //float d = nextUpdate.z - lastUpdate.z;
-            //print(d);
-            lerpStart = true;
-            float step = Mathf.InverseLerp(lastUpdate.z, nextUpdate.z, sweepTime);
+            startedLerping = true;
+            double pastTime = TickToSeconds(pastUpdate.tickId);
+            double futureTime = TickToSeconds(futureUpdate.tickId);
+            double step = InverseLerpDouble(sweepTime, pastTime, futureTime);
             Vector2 lastPos = transform.position;
-            Vector2 pos = Vector2.Lerp(lastUpdate, nextUpdate, step);
+            Vector2 pos = Vector2.LerpUnclamped(pastUpdate.pos, futureUpdate.pos, (float)step);
             transform.position = pos;
             if (lastPos != pos && (Vector2.Distance(pos, lastPos) / Time.deltaTime > velocityToUpdateRotation))
             {
                 angle = Vector2.SignedAngle(Vector2.up, pos - lastPos);
             }
-            //print(((pos - lastPos).x) / Time.deltaTime);
         }
         else
         {
-            if (lerpStart)
+            if (startedLerping)
             {
-                //print("Insufficient data to lerp, backing off!");
-                interpolationSweepDelayDecay = 1 - ((1 - interpolationSweepDelayDecay) / 4);
-                interpolationSweepDelay *= interpolationSweepDelayGrowth;
+                print("NO LERP DATA");
             }
         }
 
@@ -109,40 +127,91 @@ public class EntityOld : MonoBehaviour
             sum /= rotationAverageWindow.Count;
             transform.localEulerAngles = new Vector3(transform.localEulerAngles.x, transform.localEulerAngles.y, Mathf.Atan2(sum.x, sum.y) * -Mathf.Rad2Deg);
         }
+
+        sweepTimeDelay = StepTowardsDouble(sweepTimeDelay, sweepTimeDelayTarget + sweepTimeOffset, Time.deltaTime * sweepTimeVelocity);
     }
 
-    private void FixedUpdate()
+    public virtual void Snapshot(EntitySnapshotData data)
     {
-        interpolationSweepDelay *= interpolationSweepDelayDecay;
-        if (interpolationSweepDelayDecay > 0.99999f)
-        {
-            interpolationSweepDelayDecay = 0.999f;
-        }
-        // TODO think about out of order packets are treated, how does that wierd time effect lerping? yes
-    }
-
-    public virtual void UpdateEnity(EntitySnapshotData data)
-    {
-        //if (UnityEngine.Random.Range(0, 100) < (1f / 25f) * 100f)
+        //if (UnityEngine.Random.Range(0f, 100f) < (5f / 25f) * 100f)
         //return;
 
-        if (!firstUpdateReceived)
+        RawSnapshot(data.TickId, data.Pos);
+    }
+
+    public void RawSnapshot(uint tickId, Vector2 pos)
+    {
+        if (!isInit)
         {
-            firstUpdateReceived = true;
-            leadingTick = data.TickId;
-            transform.position = data.Pos;
+            isInit = true;
+            leadingTick = tickId;
+            transform.position = pos;
+            pivotTimeTick = tickId;
+            pivotTime = Time.timeAsDouble;
         }
         else
         {
-            if (data.TickId > leadingTick)
+            if (tickId > leadingTick)
             {
-                leadingTick = data.TickId;
+                leadingTick = tickId;
+            }
+
+            double timeSincePivot = Time.timeAsDouble - pivotTime;
+            double sweepTime = TickToSeconds(pivotTimeTick) + timeSincePivot;
+            double delta = TickToSeconds(tickId) - sweepTime;
+            sweepTimeDelayTarget = -delta + 0.04;
+
+            targetSweepTimeDelayQueue.Enqueue(sweepTimeDelayTarget);
+            if (targetSweepTimeDelayQueue.Count > 25)
+            {
+                targetSweepTimeDelayQueue.Dequeue();
+            }
+            if (targetSweepTimeDelayQueue.Count == 25)
+            {
+                sweepTimeOffset = Math.Abs(targetSweepTimeDelayQueue.Max() - targetSweepTimeDelayQueue.Min());
             }
         }
 
-        // TODO DONT SAVE UPDATE IF SWEEP COULD HIT IT
-        // CALCULATE TIME.TIME LATER
-        // WILL NEED TO OFFSET LATER ^^^^ DONT TRUST TWO RATES ON DIFF COMPUTERS?
-        interpolationBuffer[data.TickId % 256] = new Vector3(data.Pos.x, data.Pos.y, Time.time);
+        interpolationBuffer[tickId % 256] = (pos, tickId);
+    }
+
+    private static double TickToSeconds(uint tick)
+    {
+        return tick * 0.04;
+    }
+
+    private static double InverseLerpDouble(double t, double a, double b)
+    {
+        return (t - a) / (b - a);
+    }
+
+    private static double StepTowardsDouble(double from, double to, double by)
+    {
+        double value = from;
+
+        if (from == to)
+        {
+            return value;
+        }
+
+        if (from > to)
+        {
+            value = from - by;
+            if (from < to)
+            {
+                value = to;
+            }
+        }
+
+        if (from < to)
+        {
+            value = from + by;
+            if (from > to)
+            {
+                value = to;
+            }
+        }
+
+        return value;
     }
 }

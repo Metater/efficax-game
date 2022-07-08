@@ -9,8 +9,10 @@ impl ServerState {
     pub fn join(&mut self, addr: SocketAddr) {
         let entity = self.zone.spawn_entity(Vector2::new(0.0, 5.0));
         
+        let player_collider_diameter = ServerConstants::PLAYER_COLLIDER_RADIUS * 2.0;
+
         entity
-        .with_bounds(true, MetaitusCollider::new(Vector2::new(-15.75, -7.75), Vector2::new(15.25, 7.25)))
+        .with_bounds(true, MetaitusCollider::new(Vector2::new(-16.25+player_collider_diameter, -8.25+player_collider_diameter), Vector2::new(15.75-player_collider_diameter, 7.75-player_collider_diameter)))
         .with_drag(true, 5.0)
         .with_collider(true, MetaitusCollider::new(Vector2::new(-ServerConstants::PLAYER_COLLIDER_RADIUS, -ServerConstants::PLAYER_COLLIDER_RADIUS), Vector2::new(ServerConstants::PLAYER_COLLIDER_RADIUS, ServerConstants::PLAYER_COLLIDER_RADIUS)))
         .with_repulsion_radius(true, 0.4, 48.0, 3.0);

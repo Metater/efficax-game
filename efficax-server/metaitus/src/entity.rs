@@ -144,9 +144,9 @@ impl MetaitusEntity {
         let x_delta = Vector2::new(self.vel.x * timestep, 0.0);
         let y_delta = Vector2::new(0.0, self.vel.y * timestep);
 
-        let xy_collider = self.collider.offset(nominal_pos);
-        let x_collider = self.collider.offset(self.pos + x_delta);
-        let y_collider = self.collider.offset(self.pos + y_delta);
+        let xy_collider = self.collider.copy_with_offset(nominal_pos);
+        let x_collider = self.collider.copy_with_offset(self.pos + x_delta);
+        let y_collider = self.collider.copy_with_offset(self.pos + y_delta);
 
         let mut move_x = !self.vel.x.is_zero();
         let mut move_y = !self.vel.y.is_zero();

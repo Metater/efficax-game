@@ -33,14 +33,14 @@ impl MetaitusCollider {
     }
 
     pub fn is_static(&self) -> bool {
-        !self.id.is_zero()
+        self.id != 0
     }
 
     pub fn copy_with_id(&self, id: u32) -> Self {
         Self::new_with_id(id, self.min, self.max)
     }
 
-    pub fn offset(&self, offset: Vector2<f32>) -> Self {
+    pub fn copy_with_offset(&self, offset: Vector2<f32>) -> Self {
         Self::new_with_id(
             self.id,
             self.min + offset,
