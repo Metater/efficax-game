@@ -1,5 +1,6 @@
 tcp-client-to-server
-    init-udp
+    init-network
+    $chat
 
 tcp-server-to-client
 
