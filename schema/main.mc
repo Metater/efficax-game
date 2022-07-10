@@ -1,6 +1,5 @@
 tcp-client-to-server
     init-network
-    $chat
 
 tcp-server-to-client
 
