@@ -1,7 +1,7 @@
 !vec entity-snapshots
     !type entity-snapshot
         id u32
-        pos pos
+        pos @pos
         data
             !enum entity-specific-snapshot
                 !type none

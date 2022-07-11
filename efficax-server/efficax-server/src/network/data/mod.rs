@@ -3,6 +3,7 @@ use self::types::*;
 pub mod types;
 pub mod impls;
 pub mod constants;
+pub mod test;
 
 // If you want to free up enums, route by tcp/udp, client/server
 
