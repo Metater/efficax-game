@@ -1,8 +1,13 @@
 pub mod tabbed_reader;
 
-use tabbed_reader::TabbedReader;
+use tabbed_reader::{TabbedReader, TabbedReaderToken};
 
 fn main() {
     let mut reader = TabbedReader::new("main.mc");
-    reader.get_next_token();
+    let mut token = reader.get_next_token();
+    while token != TabbedReaderToken::EOF {
+        println!("{:?}", token);
+        token = reader.get_next_token();
+    }
+    print!("Done!");
 }
