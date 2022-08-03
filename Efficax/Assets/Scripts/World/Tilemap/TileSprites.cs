@@ -1,7 +1,8 @@
 public static class TileSprites
 {
+    public const int AtlasTilePixelSize = 16;
     public const int AtlasPixelSize = 256;
-    public const int AtlasTileSize = AtlasPixelSize / 16;
+    public const int AtlasTileSize = AtlasPixelSize / AtlasTilePixelSize;
 
     public static TileSprite Grass = new(0, 5);
     public static TileSprite Dirt = new(1, 5);

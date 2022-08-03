@@ -9,7 +9,7 @@ public class TileSprite
 
     public TileSprite(int x, int y)
     {
-        UV00 = new Vector2((x * 16) / (float)TileSprites.AtlasPixelSize, (y * 16) / (float)TileSprites.AtlasPixelSize);
-        UV11 = new Vector2(((x * 16) + 16) / (float)TileSprites.AtlasPixelSize, ((y * 16) + 16) / (float)TileSprites.AtlasPixelSize);
+        UV00 = new Vector2((x * TileSprites.AtlasTilePixelSize) / (float)TileSprites.AtlasPixelSize, (y * TileSprites.AtlasTilePixelSize) / (float)TileSprites.AtlasPixelSize);
+        UV11 = new Vector2(((x * TileSprites.AtlasTilePixelSize) + TileSprites.AtlasTilePixelSize) / (float)TileSprites.AtlasPixelSize, ((y * TileSprites.AtlasTilePixelSize) + TileSprites.AtlasTilePixelSize) / (float)TileSprites.AtlasPixelSize);
     }
 }
