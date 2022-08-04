@@ -83,7 +83,7 @@ public class UDPManager : UdpClient
     {
         writer.Reset();
 
-        writer.Put(Network.ClientToServer.Udp.Input);
+        writer.Put(Network.ClientToServer.Udp.Input.AsByte());
         writer.Put(inputDirection);
         writer.Put(inputSequence);
 

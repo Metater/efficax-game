@@ -2,29 +2,34 @@
 {
     public static class ServerToClient
     {
-        public static class Tcp
+        public enum Tcp : byte
         {
-            public const byte Chat = 0;
-            public const byte Join = 1;
-            public const byte Spawn = 2;
-            public const byte Despawn = 3;
+            Chat,
+            Join,
+            Spawn,
+            Despawn,
         }
-        public static class Udp
+        public enum Udp : byte
         {
-            public const byte Snapshot = 0;
+            Snapshot,
         }
     }
 
     public static class ClientToServer
     {
-        public static class Tcp
+        public enum Tcp : byte
         {
-            public const byte Chat = 0;
-            public const byte InitNetwork = 1;
+            Chat,
+            InitNetwork,
         }
-        public static class Udp
+        public enum Udp : byte
         {
-            public const byte Input = 0;
+            Input,
         }
     }
+
+    public static byte AsByte(this ServerToClient.Tcp tcp) => (byte)tcp;
+    public static byte AsByte(this ServerToClient.Udp udp) => (byte)udp;
+    public static byte AsByte(this ClientToServer.Tcp tcp) => (byte)tcp;
+    public static byte AsByte(this ClientToServer.Udp udp) => (byte)udp;
 }

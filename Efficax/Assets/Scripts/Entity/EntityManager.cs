@@ -9,7 +9,7 @@ public class EntityManager : MonoBehaviour
 {
     // Unity
     [SerializeField] private Transform entitiesParent;
-    [SerializeField] private Entity entityPrefab;
+    [SerializeField] private List<Entity> entityPrefabs;
 
     // Public state
     public Dictionary<uint, Entity> Entities { get; private set; }
@@ -18,16 +18,16 @@ public class EntityManager : MonoBehaviour
     {
         Entities = new();
 
-        GameManager.I.packetManager.AddTcpHandler(Network.ServerToClient.Tcp.Spawn, PacketHandlerType.Update, (SpawnData data) =>
+        GameManager.I.packetManager.AddTcpHandler(Network.ServerToClient.Tcp.Spawn.AsByte(), PacketHandlerType.Update, (SpawnData data) =>
         {
             Spawn(data.TickId, data.EntityType, data.EntityId, data.Pos);
         });
-        GameManager.I.packetManager.AddTcpHandler(Network.ServerToClient.Tcp.Despawn, PacketHandlerType.Update, (DespawnData data) =>
+        GameManager.I.packetManager.AddTcpHandler(Network.ServerToClient.Tcp.Despawn.AsByte(), PacketHandlerType.Update, (DespawnData data) =>
         {
             Despawn(data.EntityId);
         });
 
-        GameManager.I.packetManager.AddUdpHandler(Network.ServerToClient.Udp.Snapshot, PacketHandlerType.Update, (SnapshotData data) =>
+        GameManager.I.packetManager.AddUdpHandler(Network.ServerToClient.Udp.Snapshot.AsByte(), PacketHandlerType.Update, (SnapshotData data) =>
         {
             foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
             {
@@ -49,14 +49,14 @@ public class EntityManager : MonoBehaviour
     {
         if (!Entities.ContainsKey(entityId))
         {
+            var entityPrefab = entityPrefabs[(byte)entityType];
             Entity entity = Instantiate(entityPrefab, pos, Quaternion.identity, entitiesParent);
             Entities.Add(entityId, entity);
-            entity.Init(pos);
-            entity.RawSnapshot(tickId, pos);
+            entity.Init(tickId, pos);
         }
         else
         {
-            throw new Exception($"Entity exists already when spawing: type: {entityType}");
+            print($"Entity exists already when spawing: type: {entityType}");
         }
     }
 
@@ -69,7 +69,7 @@ public class EntityManager : MonoBehaviour
         }
         else
         {
-            throw new Exception($"Cannot despawn entity, it does not exist");
+            print($"Cannot despawn entity, id not found");
         }
     }
 
@@ -78,6 +78,10 @@ public class EntityManager : MonoBehaviour
         if (Entities.TryGetValue(data.Id, out Entity entity))
         {
             entity.Snapshot(data);
+        }
+        else
+        {
+            print($"Cannot update entity, id not found");
         }
     }
 }

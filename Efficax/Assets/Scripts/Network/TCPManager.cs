@@ -111,7 +111,7 @@ public class TCPManager : TcpClient
     {
         ResetWriter();
 
-        writer.Put(Network.ClientToServer.Tcp.InitNetwork);
+        writer.Put(Network.ClientToServer.Tcp.InitNetwork.AsByte());
         writer.Put(udpPort);
 
         Send();

@@ -9,8 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7642203330335510488}
-  - component: {fileID: -3291067596503432205}
   - component: {fileID: 3061075523680366857}
+  - component: {fileID: 895381919384347732}
+  - component: {fileID: -3680186476600376735}
   m_Layer: 0
   m_Name: Entity
   m_TagString: Untagged
@@ -33,24 +34,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &-3291067596503432205
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7642203330335510490}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1c58a5165f962db4bb43cc1feed4a551, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  velocityToUpdateRotation: 1.125
-  rotationAverageWindowTime: 0.12
-  sweepTimeVelocity: 0.005
-  sweepTimeDelay: 0
-  sweepTimeDelayTarget: 0
-  sweepTimeOffset: 0.04
 --- !u!212 &3061075523680366857
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -103,3 +86,36 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &895381919384347732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7642203330335510490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b637930a4850734ca405f0ab437d166, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interpolator: {fileID: -3680186476600376735}
+  hasDebugPacketLoss: 0
+  debugPacketsLostPerSecond: 0
+--- !u!114 &-3680186476600376735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7642203330335510490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 643e4417b5e7ed74b9f398d29bbbdc69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  velocityToUpdateRotation: 1.125
+  rotationAverageWindowTime: 0.12
+  sweepTimeRate: 0.005
+  sweepTimeDelay: 0
+  sweepTimeDelayTarget: 0
+  sweepTimeOffset: 0

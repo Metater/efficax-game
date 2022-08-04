@@ -30,7 +30,7 @@ public class PlayerManager : MonoBehaviour
             inputSequence = 0;
         };
 
-        GameManager.I.packetManager.AddUdpHandler(Network.ServerToClient.Tcp.Join, PacketHandlerType.Update, (JoinData data) =>
+        GameManager.I.packetManager.AddUdpHandler(Network.ServerToClient.Tcp.Join.AsByte(), PacketHandlerType.Update, (JoinData data) =>
         {
             IsPlayerIdSet = true;
             PlayerId = data.PlayerId;

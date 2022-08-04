@@ -23,24 +23,23 @@ public class SnapshotData : NetworkData<SnapshotData>
 
 public class EntitySnapshotData : NetworkData<EntitySnapshotData>
 {
-    // Entity Snapshot Data Enum Variants
-    public const byte None = 0;
-    public const byte Player = 1;
-
     public uint Id { get; private set; }
     public Vector2 Pos { get; private set; }
-    public IEntitySpecificSnapshotData Data { get; private set; }
+    public EntityType Type { get; private set; }
+    public object Data { get; private set; }
+
+    public PlayerSnapshotData AsPlayerSnapshot => Data as PlayerSnapshotData;
 
     public override EntitySnapshotData Read(NetDataReader reader)
     {
         Id = reader.GetUInt();
         Pos = DataUtils.ReadPos(reader);
 
-        byte type = reader.GetByte();
-        Data = type switch
+        Type = (EntityType)reader.GetByte();
+        Data = Type switch
         {
-            None => null,
-            Player => new PlayerSnapshotData().SetTickIdAndRead(reader, TickId),
+            EntityType.None => null,
+            EntityType.Player => new PlayerSnapshotData().SetTickIdAndRead(reader, TickId),
             _ => null,
         };
 
@@ -48,14 +47,9 @@ public class EntitySnapshotData : NetworkData<EntitySnapshotData>
     }
 }
 
-public class PlayerSnapshotData : NetworkData<PlayerSnapshotData>, IEntitySpecificSnapshotData
+public class PlayerSnapshotData : NetworkData<PlayerSnapshotData>
 {
     public byte InputSequence { get; private set; }
-
-    public EntityType GetEntityType()
-    {
-        return EntityType.Player;
-    }
 
     public override PlayerSnapshotData Read(NetDataReader reader)
     {

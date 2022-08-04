@@ -766,7 +766,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1277084298}
   - component: {fileID: 1277084299}
-  - component: {fileID: 1277084300}
   - component: {fileID: 1277084301}
   - component: {fileID: 1277084302}
   - component: {fileID: 1277084303}
@@ -806,20 +805,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   worldManager: {fileID: 1277084302}
   entityManager: {fileID: 1277084301}
-  packetManager: {fileID: 1277084300}
   playerManager: {fileID: 1277084303}
---- !u!114 &1277084300
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1277084297}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5ca5eccc59f5d45449a044d0a95904ee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1277084301
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -833,7 +819,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   entitiesParent: {fileID: 1963906678}
-  entityPrefab: {fileID: -3291067596503432205, guid: b9bdfc82760344f4ead85df9552f1a6e, type: 3}
+  entityPrefabs:
+  - {fileID: 0}
+  - {fileID: 895381919384347732, guid: b9bdfc82760344f4ead85df9552f1a6e, type: 3}
 --- !u!114 &1277084302
 MonoBehaviour:
   m_ObjectHideFlags: 0

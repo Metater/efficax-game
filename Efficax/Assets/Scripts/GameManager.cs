@@ -25,6 +25,12 @@ public class GameManager : MonoBehaviour
     }
     #endregion Singleton
 
+    // Public constants
+    public const float TickPeriod = (float)TickPeriodDouble;
+    public const float TicksPerSecond = 1f / TickPeriod;
+    public const double TickPeriodDouble = 0.04;
+    public const double TicksPerSecondDouble = 1d / TickPeriodDouble;
+
     // Unity managers
     public WorldManager worldManager;
     public EntityManager entityManager;
@@ -50,6 +56,8 @@ public class GameManager : MonoBehaviour
     {
         AwakeSingleton();
 
+        packetManager = new();
+
         OnDisconnected += () =>
         {
             HasInitNetwork = false;
@@ -59,8 +67,6 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         print("Client connecting...");
-
-        packetManager = new();
 
         tcp = new(packetManager, "127.0.0.1", 8080);
         tcp.ConnectAsync();

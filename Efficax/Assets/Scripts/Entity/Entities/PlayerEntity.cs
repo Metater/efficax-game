@@ -1,4 +1,4 @@
-﻿public class PlayerEntity
+﻿public class PlayerEntity : Entity
 {
 
 }
