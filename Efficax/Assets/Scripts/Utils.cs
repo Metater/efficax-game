@@ -1,20 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class DataUtils
+public static class Utils
 {
-    public static void WritePos(NetDataWriter writer, Vector2 pos)
+    public static double TickToSeconds(uint tick)
     {
-        writer.Put(ScaleFloatToUInt(-256, 256, Mathf.Clamp(pos.x, -256, 256)));
-        writer.Put(ScaleFloatToUInt(-256, 256, Mathf.Clamp(pos.y, -256, 256)));
+        return tick * 0.04;
     }
-    public static Vector2 ReadPos(NetDataReader reader)
+
+    public static double InverseLerpDouble(double t, double a, double b)
     {
-        return new Vector2(UnscaleUIntToFloat(-256, 256, reader.GetUShort()), UnscaleUIntToFloat(-256, 256, reader.GetUShort()));
+        return (t - a) / (b - a);
+    }
+
+    public static double StepTowardsDouble(double from, double to, double by)
+    {
+        double value = from;
+
+        if (from == to)
+        {
+            return value;
+        }
+
+        if (from > to)
+        {
+            value = from - by;
+            if (from < to)
+            {
+                value = to;
+            }
+        }
+
+        if (from < to)
+        {
+            value = from + by;
+            if (from > to)
+            {
+                value = to;
+            }
+        }
+
+        return value;
     }
 
     public static uint ScaleFloatToUInt(float lower, float upper, float value)

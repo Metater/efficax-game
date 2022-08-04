@@ -7,44 +7,50 @@ using UnityEngine;
 
 public class EntityManager : MonoBehaviour
 {
+    // Unity
     [SerializeField] private Transform entitiesParent;
     [SerializeField] private Entity entityPrefab;
 
-    private Dictionary<uint, Entity> entities;
+    // Public state
+    public Dictionary<uint, Entity> Entities { get; private set; }
 
     private void Awake()
     {
-        entities = new();
-    }
+        Entities = new();
 
-    private void Update()
-    {
-        ResetIfDisconnected();
-    }
-
-    private void ResetIfDisconnected()
-    {
-        if (GameManager.I.IsDisconnected)
+        GameManager.I.packetManager.AddTcpHandler(Network.ServerToClient.Tcp.Spawn, PacketHandlerType.Update, (SpawnData data) =>
         {
-            foreach ((_, Entity entity) in entities)
+            Spawn(data.TickId, data.EntityType, data.EntityId, data.Pos);
+        });
+        GameManager.I.packetManager.AddTcpHandler(Network.ServerToClient.Tcp.Despawn, PacketHandlerType.Update, (DespawnData data) =>
+        {
+            Despawn(data.EntityId);
+        });
+
+        GameManager.I.packetManager.AddUdpHandler(Network.ServerToClient.Udp.Snapshot, PacketHandlerType.Update, (SnapshotData data) =>
+        {
+            foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
+            {
+                Snapshot(entityUpdate);
+            }
+        });
+
+        GameManager.I.OnDisconnected += () =>
+        {
+            foreach (Entity entity in Entities.Values)
             {
                 Destroy(entity.gameObject);
             }
-            entities.Clear();
-        }
-    }
-
-    public bool TryGetEntity(uint entityId, out Entity entity)
-    {
-        return entities.TryGetValue(entityId, out entity);
+            Entities.Clear();
+        };
     }
 
     public void Spawn(uint tickId, EntityType entityType, uint entityId, Vector2 pos)
     {
-        if (!entities.ContainsKey(entityId))
+        if (!Entities.ContainsKey(entityId))
         {
             Entity entity = Instantiate(entityPrefab, pos, Quaternion.identity, entitiesParent);
-            entities.Add(entityId, entity);
+            Entities.Add(entityId, entity);
             entity.Init(pos);
             entity.RawSnapshot(tickId, pos);
         }
@@ -56,9 +62,9 @@ public class EntityManager : MonoBehaviour
 
     public void Despawn(uint entityId)
     {
-        if (entities.TryGetValue(entityId, out Entity entity))
+        if (Entities.TryGetValue(entityId, out Entity entity))
         {
-            entities.Remove(entityId);
+            Entities.Remove(entityId);
             Destroy(entity.gameObject);
         }
         else
@@ -69,7 +75,7 @@ public class EntityManager : MonoBehaviour
 
     public void Snapshot(EntitySnapshotData data)
     {
-        if (entities.TryGetValue(data.Id, out Entity entity))
+        if (Entities.TryGetValue(data.Id, out Entity entity))
         {
             entity.Snapshot(data);
         }

@@ -64,7 +64,7 @@ pub enum NetworkData {
     Input(InputData),
     Chat(ChatData),
     Snapshot(SnapshotData),
-    InitUDP(u16),
+    InitUdp(u16),
     Join(JoinData),
     Spawn(SpawnData),
     Despawn(DespawnData),

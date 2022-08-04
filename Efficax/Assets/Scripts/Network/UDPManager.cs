@@ -7,22 +7,24 @@ using System.Threading;
 using UnityEngine;
 using UdpClient = NetCoreServer.UdpClient;
 
-public class UDPNetworkManager : UdpClient
+public class UDPManager : UdpClient
 {
     private readonly PacketManager packetManager;
 
     private readonly NetDataReader reader = new();
+    private readonly NetDataWriter writer = new();
 
-    private bool stop = false;
+    public bool IsStopped { get; private set; } = false;
 
-    public UDPNetworkManager(PacketManager packetManager, string address, int port) : base(address, port)
+    #region Session Management
+    public UDPManager(PacketManager packetManager, string address, int port) : base(address, port)
     {
         this.packetManager = packetManager;
     }
 
     public void DisconnectAndStop()
     {
-        stop = true;
+        IsStopped = true;
         Disconnect();
         while (IsConnected)
         {
@@ -42,7 +44,7 @@ public class UDPNetworkManager : UdpClient
 
         Thread.Sleep(1000);
 
-        if (!stop)
+        if (!IsStopped)
         {
             Debug.Log("UDP client reconnecting...");
             Connect();
@@ -57,7 +59,7 @@ public class UDPNetworkManager : UdpClient
 
         while (reader.AvailableBytes > 0)
         {
-            packetManager.Handle(reader, false, tickId);
+            packetManager.HandleUdp(reader, tickId);
         }
 
         ReceiveAsync();
@@ -67,4 +69,25 @@ public class UDPNetworkManager : UdpClient
     {
         Debug.Log($"UDP client caught an error with code {error}");
     }
+
+    public ushort GetLocalPort() => (ushort)(Socket.LocalEndPoint as IPEndPoint).Port;
+    #endregion Session Management
+
+    #region Sending Management
+    private void Send()
+    {
+        SendAsync(writer.Data, 0, writer.Length);
+    }
+
+    public void SendInput(byte inputDirection, byte inputSequence)
+    {
+        writer.Reset();
+
+        writer.Put(Network.ClientToServer.Udp.Input);
+        writer.Put(inputDirection);
+        writer.Put(inputSequence);
+
+        Send();
+    }
+    #endregion Sending Management
 }

@@ -4,8 +4,10 @@ using UnityEngine;
 
 public class TilemapManager : MonoBehaviour
 {
+    // Unity
     [SerializeField] private List<TilemapLayerRenderer> renderers;
 
+    // Private state
     private readonly Tile[,,] tilemap = new Tile[64, 32, 2];
 
     private void Start()

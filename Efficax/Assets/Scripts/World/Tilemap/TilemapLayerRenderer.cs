@@ -7,6 +7,7 @@ public class TilemapLayerRenderer : MonoBehaviour
 {
     public const int QuadArraySize = 16383;
 
+    // Private state
     private Mesh mesh;
 
     private Vector3[] vertices;

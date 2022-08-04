@@ -5,65 +5,18 @@ using System.Threading;
 using System;
 using UnityEngine;
 
-public class PacketManager : MonoBehaviour
+public class PacketManager
 {
-    public ConcurrentQueue<Action> UpdateQueue { get; private set; }
-    public ConcurrentQueue<Action> FixedUpdateQueue { get; private set; }
+    // Private state
+    private readonly PacketHandler[] tcpHandlers = new PacketHandler[256];
+    private readonly PacketHandler[] udpHandlers = new PacketHandler[256];
 
-    private PacketHandler[] tcpHandlers;
-    private PacketHandler[] udpHandlers;
+    private readonly ConcurrentQueue<Action> updateQueue = new();
+    private readonly ConcurrentQueue<Action> fixedUpdateQueue = new();
 
-    private void Awake()
-    {
-        UpdateQueue = new ConcurrentQueue<Action>();
-        FixedUpdateQueue = new ConcurrentQueue<Action>();
-
-        tcpHandlers = new PacketHandler[256];
-        udpHandlers = new PacketHandler[256];
-
-        AddTCPPacketHandlers();
-        AddUDPPacketHandlers();
-    }
-
-    public void ExecuteQueuedUpdates()
-    {
-        ExecuteActions(UpdateQueue);
-    }
-
-    public void ExecuteQueuedFixedUpdates()
-    {
-        ExecuteActions(FixedUpdateQueue);
-    }
-
-    public void Handle(NetDataReader reader, bool isTcp, uint tickId)
-    {
-        byte packetType = reader.GetByte();
-
-        if (isTcp)
-        {
-            var handler = tcpHandlers[packetType];
-            if (handler is not null)
-            {
-                handler.Handle(reader, tickId);
-            }
-            else
-            {
-                print($"TCP Unknown packet type: {packetType}");
-            }
-        }
-        else
-        {
-            var handler = udpHandlers[packetType];
-            if (handler is not null)
-            {
-                handler.Handle(reader, tickId);
-            }
-            else
-            {
-                print($"UDP Unknown packet type: {packetType}");
-            }
-        }
-    }
+    #region Action Lifecycle
+    public void EnqueueUpdate(Action update) => updateQueue.Enqueue(update);
+    public void EnqueueFixedUpdate(Action fixedUpdate) => fixedUpdateQueue.Enqueue(fixedUpdate);
 
     private static void ExecuteActions(ConcurrentQueue<Action> actions)
     {
@@ -71,37 +24,116 @@ public class PacketManager : MonoBehaviour
         for (int i = 0; i < actionsCount; i++)
         {
             if (actions.TryDequeue(out Action action))
+            {
                 action();
+            }
             else
+            {
                 break;
+            }
         }
     }
 
-    private void AddTCPPacketHandlers()
+    public void ExecuteUpdates() => ExecuteActions(updateQueue);
+    public void ExecuteFixedUpdates() => ExecuteActions(fixedUpdateQueue);
+    #endregion Action Lifecycle
+
+    #region Handling
+    public void HandleTcp(NetDataReader reader, uint tickId)
     {
-        tcpHandlers[Network.Join] = PacketHandler.Create(this, PacketHandlerType.Update, (JoinData data) =>
+        byte packetType = reader.GetByte();
+
+        var handler = tcpHandlers[packetType];
+        if (handler is not null)
         {
-            GameManager.I.playerManager.Joined(data);
-            GameManager.I.entityManager.Spawn(data.TickId, EntityType.Player, data.PlayerId, data.Pos);
-        });
-        tcpHandlers[Network.Spawn] = PacketHandler.Create(this, PacketHandlerType.Update, (SpawnData data) =>
+            handler.Handle(reader, tickId);
+        }
+        else
         {
-            GameManager.I.entityManager.Spawn(data.TickId, data.EntityType, data.EntityId, data.Pos);
-        });
-        tcpHandlers[Network.Despawn] = PacketHandler.Create(this, PacketHandlerType.Update, (DespawnData data) =>
+            Debug.Log($"TCP Unknown packet type: {packetType}");
+        }
+    }
+    public void HandleUdp(NetDataReader reader, uint tickId)
+    {
+        byte packetType = reader.GetByte();
+
+        var handler = udpHandlers[packetType];
+        if (handler is not null)
         {
-            GameManager.I.entityManager.Despawn(data.EntityId);
-        });
+            handler.Handle(reader, tickId);
+        }
+        else
+        {
+            Debug.Log($"UDP Unknown packet type: {packetType}");
+        }
     }
 
-    private void AddUDPPacketHandlers()
+    public void AddTcpHandler<T>(byte index, PacketHandlerType handlerType, Action<T> handler) where T : NetworkData<T>, new()
     {
-        udpHandlers[Network.Snapshot] = PacketHandler.Create(this, PacketHandlerType.Update, (SnapshotData data) =>
+        #if UNITY_EDITOR
+        if (tcpHandlers[index] is not null)
         {
-            foreach (EntitySnapshotData entityUpdate in data.EntitySnapshots)
-            {
-                GameManager.I.entityManager.Snapshot(entityUpdate);
-            }
-        });
+            throw new Exception($"Duplicate TCP handler, index {index}");
+        }
+        #endif
+
+        tcpHandlers[index] = PacketHandler.Create<T>(this, handlerType, handler);
     }
+    public void AddUdpHandler<T>(byte index, PacketHandlerType handlerType, Action<T> handler) where T : NetworkData<T>, new()
+    {
+        #if UNITY_EDITOR
+        if (udpHandlers[index] is not null)
+        {
+            throw new Exception($"Duplicate UDP handler, index {index}");
+        }
+        #endif
+
+        udpHandlers[index] = PacketHandler.Create<T>(this, handlerType, handler);
+    }
+    #endregion Handling
+}
+
+public class PacketHandler
+{
+    private readonly Action<NetDataReader, uint> packetHandler;
+
+    private PacketHandler(Action<NetDataReader, uint> packetHandler)
+    {
+        this.packetHandler = packetHandler;
+    }
+
+    public static PacketHandler Create<T>(PacketManager packetManager, PacketHandlerType handlerType, Action<T> handler) where T : NetworkData<T>, new()
+    {
+        void PacketHandler(NetDataReader reader, uint tickId)
+        {
+            T data = new T().SetTickIdAndRead(reader, tickId);
+            switch (handlerType)
+            {
+                case PacketHandlerType.Default:
+                    handler(data);
+                    break;
+                case PacketHandlerType.Update:
+                    packetManager.EnqueueUpdate(() => handler(data));
+                    break;
+                case PacketHandlerType.FixedUpdate:
+                    packetManager.EnqueueFixedUpdate(() => handler(data));
+                    break;
+            }
+        }
+
+        return new PacketHandler(PacketHandler);
+    }
+
+
+    public void Handle(NetDataReader reader, uint tickId)
+    {
+        packetHandler(reader, tickId);
+    }
+}
+
+public enum PacketHandlerType
+{
+    Default,
+    Update,
+    FixedUpdate
 }

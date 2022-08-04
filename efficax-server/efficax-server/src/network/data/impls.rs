@@ -37,7 +37,7 @@ impl bincode::Decode for NetworkData {
         match variant_index {
             NetworkData::INPUT => Ok(NetworkData::Input(<InputData as bincode::Decode>::decode(decoder)?)),
             NetworkData::CHAT => Ok(NetworkData::Chat(<ChatData as bincode::Decode>::decode(decoder)?)),
-            NetworkData::INIT_UDP => Ok(NetworkData::InitUDP(<u16 as bincode::Decode>::decode(decoder)?)),
+            NetworkData::INIT_UDP => Ok(NetworkData::InitUdp(<u16 as bincode::Decode>::decode(decoder)?)),
             variant => Err(bincode::error::DecodeError::UnexpectedVariant {
                 found: variant as u32,
                 type_name: "NetworkData",

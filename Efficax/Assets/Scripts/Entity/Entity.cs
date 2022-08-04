@@ -62,7 +62,7 @@ public class Entity : MonoBehaviour
         (Vector2 pos, uint tickId) futureUpdate = (Vector2.zero, uint.MaxValue);
 
         double timeSincePivot = Time.timeAsDouble - pivotTime;
-        double sweepTime = (TickToSeconds(pivotTimeTick) + timeSincePivot) - sweepTimeDelay;
+        double sweepTime = (Utils.TickToSeconds(pivotTimeTick) + timeSincePivot) - sweepTimeDelay;
 
         for (int i = 0; i < 256; i++)
         {
@@ -72,17 +72,17 @@ public class Entity : MonoBehaviour
             if (update.tickId == uint.MaxValue)
                 continue;
 
-            double updateTime = TickToSeconds(update.tickId);
+            double updateTime = Utils.TickToSeconds(update.tickId);
             double updateAndSweepDeltaTime = updateTime - sweepTime;
 
             if (updateAndSweepDeltaTime < 0) // past update
             {
-                if (updateAndSweepDeltaTime > TickToSeconds(pastUpdate.tickId) - sweepTime || pastUpdate.tickId == uint.MaxValue)
+                if (updateAndSweepDeltaTime > Utils.TickToSeconds(pastUpdate.tickId) - sweepTime || pastUpdate.tickId == uint.MaxValue)
                     pastUpdate = update;
             }
             else // future update
             {
-                if (updateAndSweepDeltaTime < TickToSeconds(futureUpdate.tickId) - sweepTime || futureUpdate.tickId == uint.MaxValue)
+                if (updateAndSweepDeltaTime < Utils.TickToSeconds(futureUpdate.tickId) - sweepTime || futureUpdate.tickId == uint.MaxValue)
                     futureUpdate = update;
             }
         }
@@ -92,9 +92,9 @@ public class Entity : MonoBehaviour
         if (pastUpdate.tickId != uint.MaxValue && futureUpdate.tickId != uint.MaxValue)
         {
             startedLerping = true;
-            double pastTime = TickToSeconds(pastUpdate.tickId);
-            double futureTime = TickToSeconds(futureUpdate.tickId);
-            double step = InverseLerpDouble(sweepTime, pastTime, futureTime);
+            double pastTime = Utils.TickToSeconds(pastUpdate.tickId);
+            double futureTime = Utils.TickToSeconds(futureUpdate.tickId);
+            double step = Utils.InverseLerpDouble(sweepTime, pastTime, futureTime);
             Vector2 lastPos = transform.position;
             Vector2 pos = Vector2.LerpUnclamped(pastUpdate.pos, futureUpdate.pos, (float)step);
             transform.position = pos;
@@ -128,7 +128,7 @@ public class Entity : MonoBehaviour
             transform.localEulerAngles = new Vector3(transform.localEulerAngles.x, transform.localEulerAngles.y, Mathf.Atan2(sum.x, sum.y) * -Mathf.Rad2Deg);
         }
 
-        sweepTimeDelay = StepTowardsDouble(sweepTimeDelay, sweepTimeDelayTarget + sweepTimeOffset, Time.deltaTime * sweepTimeVelocity);
+        sweepTimeDelay = Utils.StepTowardsDouble(sweepTimeDelay, sweepTimeDelayTarget + sweepTimeOffset, Time.deltaTime * sweepTimeVelocity);
     }
 
     public virtual void Snapshot(EntitySnapshotData data)
@@ -157,9 +157,10 @@ public class Entity : MonoBehaviour
             }
 
             double timeSincePivot = Time.timeAsDouble - pivotTime;
-            double sweepTime = TickToSeconds(pivotTimeTick) + timeSincePivot;
-            double delta = TickToSeconds(tickId) - sweepTime;
+            double sweepTime = Utils.TickToSeconds(pivotTimeTick) + timeSincePivot;
+            double delta = Utils.TickToSeconds(tickId) - sweepTime;
             sweepTimeDelayTarget = -delta + 0.04;
+            // TODO: impl expo backoff instead of ^^^^^^^^^^^^^^^^^^
 
             targetSweepTimeDelayQueue.Enqueue(sweepTimeDelayTarget);
             if (targetSweepTimeDelayQueue.Count > 25)
@@ -173,45 +174,5 @@ public class Entity : MonoBehaviour
         }
 
         interpolationBuffer[tickId % 256] = (pos, tickId);
-    }
-
-    private static double TickToSeconds(uint tick)
-    {
-        return tick * 0.04;
-    }
-
-    private static double InverseLerpDouble(double t, double a, double b)
-    {
-        return (t - a) / (b - a);
-    }
-
-    private static double StepTowardsDouble(double from, double to, double by)
-    {
-        double value = from;
-
-        if (from == to)
-        {
-            return value;
-        }
-
-        if (from > to)
-        {
-            value = from - by;
-            if (from < to)
-            {
-                value = to;
-            }
-        }
-
-        if (from < to)
-        {
-            value = from + by;
-            if (from > to)
-            {
-                value = to;
-            }
-        }
-
-        return value;
     }
 }

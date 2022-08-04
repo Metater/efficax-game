@@ -7,8 +7,5 @@ using UnityEngine;
 
 public class WorldManager : MonoBehaviour
 {
-    private void Start()
-    {
 
-    }
 }
