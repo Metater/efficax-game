@@ -4,6 +4,5 @@ using UnityEngine;
 
 public enum EntityType : byte
 {
-    None,
     Player
 }

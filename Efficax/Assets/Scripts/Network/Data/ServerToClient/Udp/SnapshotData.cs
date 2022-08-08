@@ -24,7 +24,6 @@ public class SnapshotData : NetworkData<SnapshotData>
 public class EntitySnapshotData : NetworkData<EntitySnapshotData>
 {
     public uint Id { get; private set; }
-    public Vector2 Pos { get; private set; }
     public EntityType Type { get; private set; }
     public object Data { get; private set; }
 
@@ -33,12 +32,10 @@ public class EntitySnapshotData : NetworkData<EntitySnapshotData>
     public override EntitySnapshotData Read(NetDataReader reader)
     {
         Id = reader.GetUInt();
-        Pos = DataUtils.ReadPos(reader);
-
         Type = (EntityType)reader.GetByte();
+
         Data = Type switch
         {
-            EntityType.None => null,
             EntityType.Player => new PlayerSnapshotData().SetTickIdAndRead(reader, TickId),
             _ => null,
         };
@@ -49,10 +46,12 @@ public class EntitySnapshotData : NetworkData<EntitySnapshotData>
 
 public class PlayerSnapshotData : NetworkData<PlayerSnapshotData>
 {
+    public Vector2 Pos { get; private set; }
     public byte InputSequence { get; private set; }
 
     public override PlayerSnapshotData Read(NetDataReader reader)
     {
+        Pos = DataUtils.ReadPos(reader);
         InputSequence = reader.GetByte();
 
         return this;

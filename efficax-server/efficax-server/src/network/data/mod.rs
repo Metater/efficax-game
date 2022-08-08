@@ -1,9 +1,10 @@
-use self::types::*;
-
 pub mod types;
 pub mod impls;
+pub mod enum_indicies;
+pub mod traits;
 pub mod constants;
-pub mod test;
+
+use self::types::*;
 
 // If you want to free up enums, route by tcp/udp, client/server
 
@@ -64,7 +65,7 @@ pub enum NetworkData {
     Input(InputData),
     Chat(ChatData),
     Snapshot(SnapshotData),
-    InitUdp(u16),
+    InitNetwork(u16),
     Join(JoinData),
     Spawn(SpawnData),
     Despawn(DespawnData),
@@ -92,19 +93,24 @@ pub struct SnapshotData {
 #[derive(bincode::Encode, Debug)]
 pub struct EntitySnapshotData {
     pub id: u32,
-    pub pos: PositionData,
-    pub data: EntitySpecificSnapshotData,
+    pub data: EntitySnapshotDataType,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
-pub enum EntitySpecificSnapshotData {
-    None,
+pub enum EntitySnapshotDataType {
+    Position(PositionSnapshotData),
     Player(PlayerSnapshotData)
 }
 
 #[derive(bincode::Encode, Debug)]
+pub struct PositionSnapshotData {
+    pub pos: PositionData
+}
+
+
+#[derive(bincode::Encode, Debug)]
 pub struct PlayerSnapshotData {
+    pub pos: PositionData,
     pub input_sequence: u8
 }
 
@@ -118,7 +124,7 @@ pub struct JoinData {
 // Spawn
 #[derive(bincode::Encode, Debug)]
 pub struct SpawnData {
-    pub entity_type: EntityTypeData,
+    pub entity_type: EntityType,
     pub entity_id: u32,
     pub pos: PositionData
 }

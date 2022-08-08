@@ -31,10 +31,10 @@ async fn start_sending(mut sender_rx: UnboundedReceiver<NetworkSenderMessage>, u
             NetworkSenderMessage::Leave(addr) => {
                 clients.remove(&addr);
             }
-            NetworkSenderMessage::InitNetwork((addr, udp_port)) => {
+            NetworkSenderMessage::InitNetwork((addr, remote_udp_port)) => {
                 if let Some(client) = clients.get_mut(&addr) {
                     if client.remote_udp_port == 0 {
-                        client.remote_udp_port = udp_port;
+                        client.remote_udp_port = remote_udp_port;
                     }
                 }
             }
@@ -68,10 +68,9 @@ async fn start_sending(mut sender_rx: UnboundedReceiver<NetworkSenderMessage>, u
 }
 
 fn encode_packet(packet: &NetworkPacket, buf: &mut [u8]) -> usize {
-
     let data_slice: RangeFrom<usize> =
-    if packet.is_tcp { 6.. }
-    else { 4.. };
+        if packet.is_tcp { 6.. }
+        else { 4.. };
     
     let encode_result = bincode::encode_into_slice(&packet.data, &mut buf[data_slice], bincode::config::legacy());
 

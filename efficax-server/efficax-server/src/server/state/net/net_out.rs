@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use cgmath::Vector2;
 
-use crate::{network::data::{NetworkData, SnapshotData, EntitySnapshotData, types::{PositionData, EntityTypeData}, EntitySpecificSnapshotData, PlayerSnapshotData, JoinData, SpawnData}, server::state::ServerState};
+use crate::{network::data::{NetworkData, SnapshotData, EntitySnapshotData, types::{PositionData, EntityType}, EntitySpecificSnapshotData, PlayerSnapshotData, JoinData, SpawnData}, server::state::ServerState};
 
 impl ServerState {
     pub fn notify_new_player_of_new_player(&self, addr: SocketAddr, player_id: u32, player_pos: Vector2<f32>) {
@@ -20,7 +20,7 @@ impl ServerState {
 
             if let Some(entity) = self.zone.entities.get(&client.id) {
                 let data = NetworkData::Spawn(SpawnData {
-                    entity_type: EntityTypeData::Player,
+                    entity_type: EntityType::Player,
                     entity_id: client.id,
                     pos: PositionData::new(entity.pos),
                 });
@@ -30,7 +30,7 @@ impl ServerState {
     }
     pub fn notify_existing_players_of_new_player(&self, addr: SocketAddr, player_id: u32, player_pos: Vector2<f32>) {
         let data = NetworkData::Spawn(SpawnData {
-            entity_type: EntityTypeData::Player,
+            entity_type: EntityType::Player,
             entity_id: player_id,
             pos: PositionData::new(player_pos),
         });

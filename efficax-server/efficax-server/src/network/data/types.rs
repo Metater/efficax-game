@@ -2,7 +2,7 @@ use cgmath::Vector2;
 use efficax_utils::scaling::{scale_f32_as_u16, unscale_u16_as_f32};
 
 // Position
-#[derive(bincode::Encode, bincode::Decode, Debug)]
+#[derive(bincode::Encode, bincode::Decode, Copy, Clone, Debug)]
 pub struct PositionData {
     x: u16,
     y: u16,
@@ -22,7 +22,7 @@ impl PositionData {
 }
 
 // EntityType
-#[derive(Debug)]
-pub enum EntityTypeData {
+#[derive(Copy, Clone, Debug)]
+pub enum EntityType {
     Player
 }
