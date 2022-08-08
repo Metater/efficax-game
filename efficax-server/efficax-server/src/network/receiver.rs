@@ -37,41 +37,6 @@ pub async fn start(receiver_tx: UnboundedSender<NetworkReceiverMessage>, sender_
     (udp_socket, stop_notifier, receiver_handle, udp_receiver_handle)
 }
 
-async fn udp_receive(receiver_udp_socket: Arc<UdpSocket>, udp_receiver_tx: UnboundedSender<NetworkReceiverMessage>, udp_receiver_stop_notifier: Arc<Notify>) {
-    let mut buf = [0u8; UDP_BUF_SIZE];
-    loop {
-        select! {
-            recv_result = receiver_udp_socket.recv_from(&mut buf) => {
-                match recv_result {
-                    Ok((len, addr)) => {
-                        let packet_slice = &buf[..len];
-                        let result: Result<(NetworkData, usize), bincode::error::DecodeError> = bincode::decode_from_slice(packet_slice, bincode::config::legacy());
-                        match result {
-                            Ok((data, _)) => {
-                                let packet = NetworkPacket::unicast(false, addr, 0, data);
-                                let message = NetworkReceiverMessage::Data(packet);
-                                if udp_receiver_tx.send(message).is_err() {
-                                    break;
-                                }
-                            }
-                            Err(e) => {
-                                // TODO kick client if too many errors?
-                                println!("[network udp receiver]: error: {} client: {}", e, addr);
-                            }
-                        }
-                    }
-                    Err(_e) => {
-                        continue;
-                    }
-                }
-            },
-            () = udp_receiver_stop_notifier.notified() => {
-                break;
-            }
-        }
-    }
-}
-
 async fn start_accepting(listener: TcpListener, receiver_tx: UnboundedSender<NetworkReceiverMessage>, sender_tx: UnboundedSender<NetworkSenderMessage>, stop_notifier: Arc<Notify>) {
     loop {
         select! {
@@ -80,16 +45,16 @@ async fn start_accepting(listener: TcpListener, receiver_tx: UnboundedSender<Net
                     Ok(client) => client,
                     Err(_) => continue
                 };
-    
+                
                 if let Err(_) = stream.set_nodelay(true) {
                     continue;
                 }
-        
+                
                 let (reader, writer) = stream.into_split();
-        
+
                 let receiver_channel = receiver_tx.clone();
                 receiver_channel.send(NetworkReceiverMessage::Join(addr)).ok();
-    
+
                 let mut sender_channel = sender_tx.clone();
                 sender_channel.send(NetworkSenderMessage::Join(NetworkClient::new(addr, writer))).ok();
 
@@ -161,10 +126,10 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, sender_t
                             Ok((data, _)) => {
                                 match data {
                                     NetworkData::InitUdp(udp_port) => {
-                                        if sender_tx.send(NetworkSenderMessage::InitUDP((addr, udp_port))).is_err() {
+                                        if sender_tx.send(NetworkSenderMessage::InitNetwork((addr, udp_port))).is_err() {
                                             return Ok(())
                                         }
-                                        if receiver_tx.send(NetworkReceiverMessage::InitUDP((addr, udp_port))).is_err() {
+                                        if receiver_tx.send(NetworkReceiverMessage::InitNetwork((addr, udp_port))).is_err() {
                                             return Ok(())
                                         }
                                     },
@@ -198,4 +163,39 @@ async fn receive(receiver_tx: &UnboundedSender<NetworkReceiverMessage>, sender_t
     }
 
     Ok(())
+}
+
+async fn udp_receive(receiver_udp_socket: Arc<UdpSocket>, udp_receiver_tx: UnboundedSender<NetworkReceiverMessage>, udp_receiver_stop_notifier: Arc<Notify>) {
+    let mut buf = [0u8; UDP_BUF_SIZE];
+    loop {
+        select! {
+            recv_result = receiver_udp_socket.recv_from(&mut buf) => {
+                match recv_result {
+                    Ok((len, addr)) => {
+                        let packet_slice = &buf[..len];
+                        let result: Result<(NetworkData, usize), bincode::error::DecodeError> = bincode::decode_from_slice(packet_slice, bincode::config::legacy());
+                        match result {
+                            Ok((data, _)) => {
+                                let packet = NetworkPacket::unicast(false, addr, 0, data);
+                                let message = NetworkReceiverMessage::Data(packet);
+                                if udp_receiver_tx.send(message).is_err() {
+                                    break;
+                                }
+                            }
+                            Err(e) => {
+                                // TODO kick client if too many errors?
+                                println!("[network udp receiver]: error: {} client: {}", e, addr);
+                            }
+                        }
+                    }
+                    Err(_e) => {
+                        continue;
+                    }
+                }
+            },
+            () = udp_receiver_stop_notifier.notified() => {
+                break;
+            }
+        }
+    }
 }

@@ -158,7 +158,7 @@ impl EfficaxServer {
                 println!("[server]: client: {} left server", addr);
                 self.state.leave(addr);
             }
-            NetworkReceiverMessage::InitUDP((addr, udp_port)) => {
+            NetworkReceiverMessage::InitNetwork((addr, udp_port)) => {
                 let udp_addr = SocketAddr::new(addr.ip(), udp_port);
                 self.udp_to_tcp_addrs.insert(udp_addr, addr);
                 self.tcp_to_udp_addrs.insert(addr, udp_addr);

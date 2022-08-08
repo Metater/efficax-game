@@ -31,10 +31,10 @@ async fn start_sending(mut sender_rx: UnboundedReceiver<NetworkSenderMessage>, u
             NetworkSenderMessage::Leave(addr) => {
                 clients.remove(&addr);
             }
-            NetworkSenderMessage::InitUDP((addr, udp_port)) => {
+            NetworkSenderMessage::InitNetwork((addr, udp_port)) => {
                 if let Some(client) = clients.get_mut(&addr) {
-                    if client.udp_port == 0 {
-                        client.udp_port = udp_port;
+                    if client.remote_udp_port == 0 {
+                        client.remote_udp_port = udp_port;
                     }
                 }
             }
@@ -48,7 +48,7 @@ async fn start_sending(mut sender_rx: UnboundedReceiver<NetworkSenderMessage>, u
                         if packet.is_tcp {
                             tcp_send(&packet, encoded_data, client).await;
                         }
-                        else if client.udp_port == 0 {
+                        else if client.remote_udp_port == 0 {
                             // Drop data, UDP is unreliable, so it won't matter
                         }
                         else {
@@ -114,7 +114,7 @@ async fn tcp_send(packet: &NetworkPacket, encoded_data: &[u8], client: &mut Netw
 }
 
 async fn udp_send(packet: &NetworkPacket, encoded_data: &[u8], client: &mut NetworkClient, socket: &Arc<UdpSocket>) {
-    let udp_addr = SocketAddr::new(client.addr.ip(), client.udp_port);
+    let udp_addr = SocketAddr::new(client.addr.ip(), client.remote_udp_port);
     if let Err(e) = socket.send_to(encoded_data, udp_addr).await {
         println!("[network sender]: error: {} while writing udp data: {:?} to client: {}", e, packet.data, client.addr);
     }

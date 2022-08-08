@@ -12,7 +12,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use metaitus::{zone::MetaitusZone, collider::MetaitusCollider};
 
-use crate::network::{NetworkSenderHandle, NetworkSenderMessage};
+use crate::network::{NetworkSenderMessage, sender_handle::NetworkSenderHandle};
 
 use self::client_state::ClientState;
 
